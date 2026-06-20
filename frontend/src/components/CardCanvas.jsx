@@ -95,19 +95,28 @@ export default function CardCanvas({ layers, setLayers, initialLayers, formData 
 }
 
 function CardBackground({ background, cardType }) {
-  const theme = CARD_TYPES[cardType] || CARD_TYPES["Modern Dark"];
+  const theme = CARD_TYPES[cardType] || CARD_TYPES.modern_dark;
   const fill = background?.fill || theme.colors.background;
   const accentFill = background?.accentFill || theme.colors.backgroundAlt;
 
   return (
     <>
-      <Rect x={0} y={0} width={CARD_WIDTH} height={CARD_HEIGHT} fill={fill} />
-      <Circle x={110} y={130} radius={190} fill={accentFill} opacity={0.42} />
+      <Rect
+        x={0}
+        y={0}
+        width={CARD_WIDTH}
+        height={CARD_HEIGHT}
+        fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+        fillLinearGradientEndPoint={{ x: CARD_WIDTH, y: CARD_HEIGHT }}
+        fillLinearGradientColorStops={[0, fill, 1, accentFill]}
+      />
+      <Circle x={110} y={130} radius={190} fill={theme.colors.accent} opacity={0.18} />
       <Circle x={710} y={870} radius={240} fill={theme.colors.accent} opacity={0.16} />
-      {cardType === "Luxury" ? (
+      <Rect x={28} y={28} width={CARD_WIDTH - 56} height={CARD_HEIGHT - 56} stroke={theme.colors.primary} strokeWidth={2} opacity={0.36} />
+      {cardType === "luxury" ? (
         <Rect x={38} y={38} width={CARD_WIDTH - 76} height={CARD_HEIGHT - 76} stroke={theme.colors.primary} strokeWidth={5} />
       ) : null}
-      {cardType === "Floral" ? (
+      {cardType === "floral" ? (
         <>
           <Circle x={62} y={72} radius={32} fill={theme.colors.accent} opacity={0.72} />
           <Circle x={728} y={82} radius={28} fill={theme.colors.primary} opacity={0.5} />

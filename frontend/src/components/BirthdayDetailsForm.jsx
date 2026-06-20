@@ -44,8 +44,8 @@ export default function BirthdayDetailsForm({ formData, onChange }) {
         <span>Card type</span>
         <select value={formData.cardType} onChange={(event) => onChange("cardType", event.target.value)}>
           {CARD_TYPE_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.id} value={option.id}>
+              {option.label}
             </option>
           ))}
         </select>

@@ -5,7 +5,7 @@ export const CARD_WIDTH = 800;
 export const CARD_HEIGHT = 1000;
 
 export function generateInitialLayers({ cardType, selectedObjects, aiPlan, portraitUrl }) {
-  const theme = CARD_TYPES[cardType] || CARD_TYPES["Modern Dark"];
+  const theme = CARD_TYPES[cardType] || CARD_TYPES.modern_dark;
   const layers = [
     {
       id: "background",
@@ -17,16 +17,16 @@ export function generateInitialLayers({ cardType, selectedObjects, aiPlan, portr
       id: "portrait",
       type: "portrait",
       imageUrl: portraitUrl,
-      x: 270,
+      x: 278,
       y: 260,
-      width: 270,
-      height: 360,
+      width: 250,
+      height: 330,
       draggable: true
     },
-    textLayer("headline", aiPlan?.headline || "Happy Birthday", 72, 82, theme.textSizes.headline, theme.fonts.headline, theme.colors.primary, 656, "center", true),
-    textLayer("name_text", aiPlan?.name_text || "Your Name!", 90, 150, theme.textSizes.name, theme.fonts.name, theme.colors.secondary, 620, "center", true),
-    textLayer("main_wish", aiPlan?.main_wish || "A warm birthday wish will appear here.", 80, 650, theme.textSizes.wish, theme.fonts.body, theme.colors.body, 640, "center", false),
-    textLayer("short_tagline", aiPlan?.short_tagline || "", 150, 845, theme.textSizes.tagline, theme.fonts.body, theme.colors.primary, 500, "center", true)
+    textLayer("headline", aiPlan?.headline || "Happy Birthday", 80, 82, theme.textSizes.headline, theme.fonts.headline, theme.colors.primary, 640, "center", true),
+    textLayer("name_text", aiPlan?.name_text || "Your Name!", 92, 148, theme.textSizes.name, theme.fonts.name, theme.colors.secondary, 616, "center", true),
+    textLayer("main_wish", aiPlan?.main_wish || "A warm birthday wish will appear here.", 86, 628, theme.textSizes.wish, theme.fonts.body, theme.colors.body, 628, "center", false),
+    textLayer("short_tagline", aiPlan?.short_tagline || "", 150, 826, theme.textSizes.tagline, theme.fonts.body, theme.colors.primary, 500, "center", true)
   ];
 
   selectedObjects.forEach((objectId, index) => {
@@ -49,13 +49,13 @@ export function generateInitialLayers({ cardType, selectedObjects, aiPlan, portr
 
     const objectText = aiPlan?.object_texts?.[objectId];
     if (meta.supportsText && objectText) {
-      layers.push(textLayer(`object_text_${objectId}`, objectText, position.x - 35, position.y + meta.defaultSize + 8, theme.textSizes.object, theme.fonts.object, theme.colors.secondary, 220, "center", true));
+      layers.push(textLayer(`object_text_${objectId}`, objectText, position.x - 40, position.y + meta.defaultSize + 4, theme.textSizes.object, theme.fonts.object, theme.colors.secondary, 230, "center", true));
     }
   });
 
   (aiPlan?.decorative_words || []).slice(0, 3).forEach((word, index) => {
     layers.push({
-      ...textLayer(`badge_${index}`, word, 72 + index * 218, 905, theme.textSizes.badge, theme.fonts.body, theme.colors.background, 180, "center", true),
+      ...textLayer(`badge_${index}`, word, 72 + index * 218, 910, theme.textSizes.badge, theme.fonts.body, theme.colors.background, 180, "center", true),
       type: "badge",
       badgeFill: theme.colors.primary
     });
@@ -84,16 +84,16 @@ function textLayer(id, text, x, y, fontSize, fontFamily, fill, width, align, bol
 function getObjectPosition(group, index) {
   const positions = {
     top: [
-      { x: 92, y: 248 },
-      { x: 610, y: 230 }
+      { x: 82, y: 260 },
+      { x: 620, y: 256 }
     ],
     side: [
-      { x: 76, y: 472 },
-      { x: 625, y: 465 }
+      { x: 72, y: 450 },
+      { x: 626, y: 450 }
     ],
     bottom: [
-      { x: 120, y: 720 },
-      { x: 560, y: 720 }
+      { x: 112, y: 698 },
+      { x: 560, y: 698 }
     ]
   };
 

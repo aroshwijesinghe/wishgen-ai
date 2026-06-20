@@ -16,7 +16,7 @@ const initialForm = {
   relationship: "friend",
   occupation: "",
   interestingThing: "",
-  cardType: "Modern Dark",
+  cardType: "modern_dark",
   selectedObjects: ["cake"]
 };
 

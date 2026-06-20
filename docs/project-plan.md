@@ -2,45 +2,71 @@
 
 ## Problem Statement
 
-Most birthday card tools use generic templates and messages. WishGen AI aims to make birthday greetings more personal by combining a user's photo, birthday details, personalized message generation, and generated card design in one simple web app.
+Generic birthday card tools often produce repetitive greetings and static templates. WishGen AI solves this by combining user details, a portrait, birthday objects, AI-planned text, and an editable card canvas into one personalized workflow.
 
 ## Objectives
 
-- Build a working local MVP first.
-- Keep the frontend and backend separated.
-- Use rule-based logic before adding paid or advanced AI services.
-- Keep message, theme, image, and card-generation logic modular.
-- Prepare the project for future AI features such as face detection, background removal, and LLM-generated wishes.
+- Keep the application English-only.
+- Generate short, warm, personalized birthday wishes.
+- Use occupation only as context, never as direct card text.
+- Let the user choose exactly one card type: `modern_dark`, `floral`, `cute`, or `luxury`.
+- Let the user choose one or two birthday objects from the fixed 20-object list.
+- Process the uploaded image into a transparent upper-body portrait without cutting hair.
+- Provide an interactive editor where text, portrait, and objects can be adjusted before download.
 
-## MVP Features
+## User Inputs
 
-- Upload a human image.
-- Enter name, age, relationship, and theme/style.
-- Generate a personalized birthday message.
-- Select a theme automatically or use the selected theme.
-- Generate a card image with Pillow.
-- Preview and download the generated card.
+- `image`
+- `name`
+- `age`
+- `relationship`
+- `occupation`
+- `interesting_thing`
+- `card_type`
+- `selected_objects`
 
-## AI Features
+## AI Card Planner
 
-Current MVP:
+The backend planner accepts the birthday details and returns JSON with:
 
-- Rule-based message generation.
-- Rule-based theme selection.
+- `headline`
+- `name_text`
+- `main_wish`
+- `object_texts`
+- `short_tagline`
+- `decorative_words`
+- `tone`
 
-Planned AI improvements:
+Groq Llama 3.3 is used when `GROQ_API_KEY` is configured. If the key is missing, the API fails, or invalid JSON is returned, the backend falls back to a local rule-based planner. The fallback still uses the user's name, age, relationship, interesting thing, selected objects, and card type.
 
-- Face detection.
-- Background removal.
-- Emotion detection.
-- Age group estimation.
-- LLM-based birthday message generation.
-- Theme recommendation based on photo and form details.
+## Background Removal
+
+The backend uses `rembg` to remove the uploaded image background and saves a transparent PNG under `backend/static/processed`. If background removal fails, the backend saves an RGBA copy so the rest of the card flow can continue.
+
+## Portrait Crop
+
+The portrait service loads the background-removed PNG as RGBA and uses the alpha channel to find visible person pixels. It crops the upper body using the alpha mask bounds, adds top padding to protect hair, adds side padding, and saves a transparent portrait PNG.
+
+## Interactive Card Editor
+
+The frontend uses React Konva to render a 4:5 card canvas. It creates layers for:
+
+- background
+- portrait
+- headline text
+- name text
+- main wish
+- selected objects
+- object text
+- tagline
+- decorative badges
+
+Users can drag layers, select text, adjust font size, color, font family, bold/normal styling, edit text, reset the layout, and download the final card as a PNG.
 
 ## Future Scope
 
-- Add multiple card templates.
-- Add multilingual message support after the English-only MVP is stable.
-- Add user accounts and saved cards.
-- Add social sharing.
-- Add deployment instructions for frontend and backend hosting.
+- Add custom object asset packs.
+- Add multiple layouts for each card type.
+- Add more robust face-aware portrait placement.
+- Add saved projects and card history.
+- Add production deployment and storage.

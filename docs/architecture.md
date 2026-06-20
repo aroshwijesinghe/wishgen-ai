@@ -1,52 +1,86 @@
 # WishGen AI Architecture
 
-## System Workflow
+## Overall Workflow
 
-1. The user opens the React frontend.
-2. The user uploads a photo and enters birthday details.
-3. The frontend sends a `multipart/form-data` request to the FastAPI backend.
-4. The backend validates and saves the uploaded image in `assets/uploads`.
-5. The backend generates a rule-based birthday message.
-6. The backend selects a theme using rule-based logic.
-7. Pillow creates the final birthday card image.
-8. The generated card is saved in `assets/generated-cards`.
-9. The API returns the message, selected theme, and card URL.
-10. The frontend displays the card preview and download button.
+1. User opens the React frontend.
+2. User uploads a portrait and enters birthday details.
+3. User selects one card type and one or two birthday objects.
+4. Frontend sends a multipart request to `POST /api/generate-card`.
+5. Backend validates the input and saves the uploaded image.
+6. Backend removes the background and saves a transparent PNG.
+7. Backend crops an upper-body portrait using the alpha mask.
+8. Backend generates an AI card plan and theme plan.
+9. Backend returns static URLs and JSON plans.
+10. Frontend builds editable Konva layers from the response.
+11. User edits the card and downloads the final PNG from the canvas.
 
-## Frontend And Backend Communication
+## Frontend/Backend Communication
 
-The frontend calls:
+Primary endpoint:
 
 ```text
 POST http://localhost:8000/api/generate-card
 ```
 
-Request fields:
+Multipart fields:
 
 - `image`
 - `name`
 - `age`
 - `relationship`
-- `theme`
+- `occupation`
+- `interesting_thing`
+- `card_type`
+- `selected_objects`
 
-Response fields:
+`selected_objects` is sent as a JSON string for multipart requests, for example:
 
-- `success`
-- `message`
-- `selected_theme`
-- `card_url`
-- `generated_card_path`
+```json
+["cake", "code_symbol"]
+```
 
-## Module Explanation
+Card type internal IDs:
 
-- `frontend/src/App.jsx` manages form state, upload state, API calls, loading state, errors, and generated results.
-- `frontend/src/components/ImageUpload.jsx` handles image selection and preview.
-- `frontend/src/components/BirthdayForm.jsx` renders birthday detail inputs.
-- `frontend/src/components/CardPreview.jsx` displays the generated message, theme, image preview, and download button.
-- `backend/main.py` creates the FastAPI app, configures CORS, serves generated cards, and includes routes.
-- `backend/app/routes/card_routes.py` defines the card generation API endpoint.
-- `backend/app/services/image_service.py` validates and saves uploaded images.
-- `backend/app/services/message_service.py` generates MVP birthday messages.
-- `backend/app/services/theme_service.py` selects the card theme.
-- `backend/app/services/card_service.py` renders the final card image with Pillow.
-- `backend/app/utils/file_utils.py` manages asset directories and unique filenames.
+- `modern_dark`
+- `floral`
+- `cute`
+- `luxury`
+
+Additional endpoints:
+
+- `POST /api/process-image`
+- `POST /api/plan-card`
+- `GET /static/...`
+
+## Backend Services
+
+- `image_service.py`: validates JPG, PNG, and WebP uploads and saves originals.
+- `background_service.py`: removes background with `rembg` and falls back to an RGBA copy if needed.
+- `portrait_service.py`: alpha-mask upper-body crop with top and side padding.
+- `ai_card_planner_service.py`: Groq-backed planner with safe JSON parsing and fallback generation.
+- `theme_plan_service.py`: card type color/font/layout guidance.
+- `card_service.py`: simple Pillow card generation for compatibility.
+- `file_utils.py`: static directory and URL helpers.
+
+## AI Planner Output JSON
+
+```json
+{
+  "headline": "Happy Birthday",
+  "name_text": "Kalindu!",
+  "main_wish": "Happy Birthday, Kalindu! May your ideas keep turning into bright wins.",
+  "object_texts": {
+    "cake": "Kalindu, the Python guy",
+    "code_symbol": "Dreams loading in Python"
+  },
+  "short_tagline": "Code, cake, and celebration!",
+  "decorative_words": ["Dreamer", "Problem Solver", "Keep Shining"],
+  "tone": "cool, friendly, and inspiring"
+}
+```
+
+The planner must not print occupation directly. Occupation is context only.
+
+## Card Rendering Flow
+
+The frontend receives `portrait_url`, `ai_plan`, and `theme_plan`. `layoutGenerator.js` converts those into Konva layers for the canvas. The user can drag the portrait, text, and selected objects, edit text content, adjust text styling, reset the layout, and export the canvas with `stage.toDataURL()`.

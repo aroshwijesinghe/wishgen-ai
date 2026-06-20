@@ -1,8 +1,14 @@
-CARD_TYPES = {"Modern Dark", "Floral", "Cute", "Luxury"}
+CARD_TYPES = {"modern_dark", "floral", "cute", "luxury"}
 
+CARD_TYPE_LABELS = {
+    "modern_dark": "Modern Dark",
+    "floral": "Floral",
+    "cute": "Cute",
+    "luxury": "Luxury",
+}
 
 THEME_PLANS = {
-    "Modern Dark": {
+    "modern_dark": {
         "colors": {
             "background": "dark teal to black gradient",
             "primary": "gold",
@@ -17,7 +23,7 @@ THEME_PLANS = {
         "layout": "bold editorial layout with a strong portrait focus and compact decorative object placement",
         "style_notes": "gold glossy details, confetti, cake, code accents, and premium contrast",
     },
-    "Floral": {
+    "floral": {
         "colors": {
             "background": "cream and pastel wash",
             "primary": "sage green",
@@ -32,7 +38,7 @@ THEME_PLANS = {
         "layout": "soft centered greeting-card layout with graceful framing around the portrait",
         "style_notes": "flowers, ribbons, soft cake, elegant borders, and gentle spacing",
     },
-    "Cute": {
+    "cute": {
         "colors": {
             "background": "pink and pastel gradient",
             "primary": "coral",
@@ -47,7 +53,7 @@ THEME_PLANS = {
         "layout": "playful layout with rounded shapes, cheerful object clusters, and room for short labels",
         "style_notes": "balloons, stars, hearts, gift box, cute cake, and light celebration details",
     },
-    "Luxury": {
+    "luxury": {
         "colors": {
             "background": "black and cream",
             "primary": "gold",
@@ -66,5 +72,9 @@ THEME_PLANS = {
 
 
 def get_theme_plan(card_type: str) -> dict:
-    selected = card_type if card_type in CARD_TYPES else "Modern Dark"
-    return {"card_type": selected, **THEME_PLANS[selected]}
+    selected = card_type if card_type in CARD_TYPES else "modern_dark"
+    return {
+        "card_type": selected,
+        "label": CARD_TYPE_LABELS[selected],
+        **THEME_PLANS[selected],
+    }

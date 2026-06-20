@@ -9,21 +9,22 @@ from app.services.background_service import remove_background
 from app.services.card_service import create_birthday_card
 from app.services.image_service import save_uploaded_image
 from app.services.portrait_service import create_upper_body_portrait
-from app.services.theme_plan_service import CARD_TYPES, get_theme_plan
+from app.services.theme_plan_service import CARD_TYPES, CARD_TYPE_LABELS, get_theme_plan
 from app.utils.file_utils import static_url
 
 router = APIRouter()
 
 LEGACY_THEME_TO_CARD_TYPE = {
-    "classic": "Luxury",
-    "colorful": "Cute",
-    "elegant": "Floral",
-    "fun": "Cute",
-    "kids": "Cute",
-    "modern": "Modern Dark",
-    "romantic": "Floral",
-    "vibrant": "Modern Dark",
-    "auto": "Modern Dark",
+    "classic": "luxury",
+    "colorful": "cute",
+    "elegant": "floral",
+    "fun": "cute",
+    "kids": "cute",
+    "modern": "modern_dark",
+    "modern dark": "modern_dark",
+    "romantic": "floral",
+    "vibrant": "modern_dark",
+    "auto": "modern_dark",
 }
 
 
@@ -62,7 +63,7 @@ async def generate_card(
     relationship: str = Form("friend"),
     occupation: str = Form(""),
     interesting_thing: str = Form(""),
-    card_type: str = Form("Modern Dark"),
+    card_type: str = Form("modern_dark"),
     selected_objects: str = Form("cake"),
     theme: str = Form(""),
 ):
@@ -137,7 +138,7 @@ def _validate_plan_input(data: dict[str, Any]) -> dict[str, Any]:
     if age < 1 or age > 120:
         raise HTTPException(status_code=422, detail="Age must be between 1 and 120.")
 
-    card_type = str(data.get("card_type") or "Modern Dark").strip()
+    card_type = _normalize_card_type(str(data.get("card_type") or "modern_dark").strip())
     if card_type not in CARD_TYPES:
         raise HTTPException(status_code=422, detail=f"card_type must be one of: {', '.join(sorted(CARD_TYPES))}.")
 
@@ -186,27 +187,34 @@ def _parse_selected_objects(raw_value: Any) -> list[str]:
 
 
 def _resolve_card_type(card_type: str, legacy_theme: str) -> str:
-    if card_type in CARD_TYPES:
-        return card_type
+    normalized = _normalize_card_type(card_type)
+    if normalized in CARD_TYPES:
+        return normalized
 
     legacy_key = str(legacy_theme or card_type or "auto").strip().lower()
-    return LEGACY_THEME_TO_CARD_TYPE.get(legacy_key, "Modern Dark")
+    return LEGACY_THEME_TO_CARD_TYPE.get(legacy_key, "modern_dark")
+
+
+def _normalize_card_type(card_type: str) -> str:
+    value = str(card_type or "").strip()
+    if value in CARD_TYPES:
+        return value
+
+    by_label = {label.lower(): key for key, label in CARD_TYPE_LABELS.items()}
+    return by_label.get(value.lower(), value)
 
 
 def _theme_key_from_card_type(card_type: str) -> str:
     return {
-        "Modern Dark": "modern",
-        "Floral": "elegant",
-        "Cute": "fun",
-        "Luxury": "classic",
+        "modern_dark": "modern",
+        "floral": "elegant",
+        "cute": "fun",
+        "luxury": "classic",
     }.get(card_type, "modern")
 
 
 def _remove_background_or_fail(image_path: Path) -> Path:
-    try:
-        return remove_background(image_path)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+    return remove_background(image_path)
 
 
 def _absolute_static_url(request: Request, path: Path) -> str:

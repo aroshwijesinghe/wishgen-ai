@@ -13,7 +13,7 @@ async function request(path, options) {
   const body = contentType.includes("application/json") ? await response.json() : null;
 
   if (!response.ok) {
-    throw new Error(body?.detail || "Something went wrong while generating the card.");
+    throw new Error(formatApiError(body?.detail));
   }
 
   return body;
@@ -66,3 +66,15 @@ export function toApiPayload(formData) {
 }
 
 export { API_BASE_URL };
+
+function formatApiError(detail) {
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail.map((item) => item.msg || item.detail || "Invalid input.").join(" ");
+  }
+
+  return "Something went wrong while generating the card.";
+}

@@ -1,6 +1,9 @@
 import json
 import os
+import re
 from typing import Any
+
+from app.services.theme_plan_service import CARD_TYPE_LABELS
 
 ALLOWED_OBJECTS = {
     "cake",
@@ -57,7 +60,7 @@ def generate_ai_card_plan(details: dict[str, Any]) -> dict:
             response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content or "{}"
-        return _normalize_plan(json.loads(content), details)
+        return _normalize_plan(_parse_json_content(content), details)
     except Exception:
         return _fallback_plan(details)
 
@@ -74,10 +77,10 @@ Object text must be 3 to 7 words.
 Object text must feel natural, not artificial.
 Object text should usually use the interesting thing when relevant.
 Match card_type:
-Modern Dark: cool, stylish, bold, slightly premium.
-Floral: warm, graceful, soft, elegant.
-Cute: playful, sweet, fun.
-Luxury: classy, premium, polished.
+modern_dark: cool, stylish, bold, slightly premium.
+floral: warm, graceful, soft, elegant.
+cute: playful, sweet, fun.
+luxury: classy, premium, polished.
 Avoid cringe, robotic, generic phrases, long paragraphs, and emojis.
 """.strip()
 
@@ -103,7 +106,7 @@ def _normalize_plan(plan: dict[str, Any], details: dict[str, Any]) -> dict:
     return {
         "headline": _remove_occupation(str(plan.get("headline") or fallback["headline"]), occupation),
         "name_text": _remove_occupation(str(plan.get("name_text") or fallback["name_text"]), occupation),
-        "main_wish": _remove_occupation(str(plan.get("main_wish") or fallback["main_wish"]), occupation),
+        "main_wish": _limit_sentences(_remove_occupation(str(plan.get("main_wish") or fallback["main_wish"]), occupation)),
         "object_texts": {
             key: _remove_occupation(value, occupation) for key, value in clean_object_texts.items()
         },
@@ -117,16 +120,16 @@ def _fallback_plan(details: dict[str, Any]) -> dict:
     name = str(details.get("name") or "Friend").strip().title()
     age = int(details.get("age") or 1)
     relationship = str(details.get("relationship") or "friend").strip().lower()
-    card_type = str(details.get("card_type") or "Modern Dark")
+    card_type = str(details.get("card_type") or "modern_dark")
     interesting = str(details.get("interesting_thing") or "making every moment brighter").strip()
     selected_objects = details.get("selected_objects") or ["cake"]
     interest_phrase = _interest_phrase(interesting)
 
     tone_map = {
-        "Modern Dark": "cool, friendly, and inspiring",
-        "Floral": "warm, graceful, and elegant",
-        "Cute": "playful, sweet, and fun",
-        "Luxury": "classy, premium, and polished",
+        "modern_dark": "cool, friendly, and inspiring",
+        "floral": "warm, graceful, and elegant",
+        "cute": "playful, sweet, and fun",
+        "luxury": "classy, premium, and polished",
     }
     object_texts = {object_name: _fallback_object_text(object_name, name, interesting) for object_name in selected_objects}
 
@@ -140,7 +143,7 @@ def _fallback_plan(details: dict[str, Any]) -> dict:
         "object_texts": object_texts,
         "short_tagline": _fallback_tagline(card_type, selected_objects),
         "decorative_words": ["Dreamer", "Keep Shining", "Bright Wins"],
-        "tone": tone_map.get(card_type, tone_map["Modern Dark"]),
+        "tone": tone_map.get(card_type, tone_map["modern_dark"]),
     }
 
 
@@ -163,6 +166,10 @@ def _fallback_object_text(object_name: str, name: str, interesting: str) -> str:
         return "Next year launching"
     if object_name == "guitar":
         return "Good vibes only"
+    if object_name == "laptop":
+        return "Bright ideas online"
+    if object_name == "cricket_bat":
+        return "Big shots ahead"
     return f"{name}'s bright day"
 
 
@@ -181,11 +188,11 @@ def _interest_phrase(interesting: str) -> str:
 
 def _fallback_tagline(card_type: str, selected_objects: list[str]) -> str:
     object_words = ", ".join(object_name.replace("_", " ") for object_name in selected_objects)
-    if card_type == "Luxury":
+    if card_type == "luxury":
         return f"Celebration with {object_words}."
-    if card_type == "Cute":
+    if card_type == "cute":
         return f"Sweet moments and {object_words}!"
-    if card_type == "Floral":
+    if card_type == "floral":
         return f"Warm wishes with {object_words}."
     return f"Style, smiles, and {object_words}!"
 
@@ -203,4 +210,21 @@ def _remove_occupation(text: str, occupation: str) -> str:
     if not occupation:
         return text
 
-    return text.replace(occupation, "").replace(occupation.title(), "").strip()
+    cleaned = re.sub(re.escape(occupation), "", text, flags=re.IGNORECASE)
+    return re.sub(r"\s{2,}", " ", cleaned).strip(" -,:")
+
+
+def _limit_sentences(text: str) -> str:
+    sentences = re.findall(r"[^.!?]+[.!?]?", text.strip())
+    limited = "".join(sentences[:2]).strip()
+    return limited or text
+
+
+def _parse_json_content(content: str) -> dict[str, Any]:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", content, flags=re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
