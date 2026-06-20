@@ -1,23 +1,38 @@
 import { jsPDF } from "jspdf";
 
-export function downloadStage(stage, format, filenameBase) {
-  if (!stage) return;
+export const exportCard = async (stageRef, format, filename) => {
+  if (!stageRef.current) return;
 
-  const safeName = (filenameBase || "birthday-card").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-  if (format === "pdf") {
-    const image = stage.toDataURL({ mimeType: "image/png", pixelRatio: 2 });
-    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [stage.width(), stage.height()] });
-    pdf.addImage(image, "PNG", 0, 0, stage.width(), stage.height());
-    pdf.save(`wishgen-ai-${safeName}.pdf`);
-    return;
+  const stage = stageRef.current;
+  
+  if (format === "png") {
+    const dataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+    downloadURI(dataURL, `${filename}.png`);
+  } else if (format === "jpeg") {
+    const dataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/jpeg", quality: 0.95 });
+    downloadURI(dataURL, `${filename}.jpg`);
+  } else if (format === "pdf") {
+    const dataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+    const width = stage.width();
+    const height = stage.height();
+    
+    // Create a PDF with matching dimensions
+    const pdf = new jsPDF({
+      orientation: width > height ? "landscape" : "portrait",
+      unit: "px",
+      format: [width, height]
+    });
+    
+    pdf.addImage(dataURL, "PNG", 0, 0, width, height);
+    pdf.save(`${filename}.pdf`);
   }
+};
 
-  const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
-  const extension = format === "jpeg" ? "jpg" : "png";
-  const dataUrl = stage.toDataURL({ mimeType, quality: 0.95, pixelRatio: 2 });
+function downloadURI(uri, name) {
   const link = document.createElement("a");
-  link.download = `wishgen-ai-${safeName}.${extension}`;
-  link.href = dataUrl;
+  link.download = name;
+  link.href = uri;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 }

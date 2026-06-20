@@ -1,4 +1,4 @@
-import { TEMPLATES } from "../data/templates.js";
+import { templates } from "../data/templates.js";
 
 export default function TemplateSelector({ selectedTemplate, onSelect }) {
   return (
@@ -8,7 +8,7 @@ export default function TemplateSelector({ selectedTemplate, onSelect }) {
         <small>Choose one</small>
       </div>
       <div className="template-grid">
-        {TEMPLATES.map((template) => (
+        {templates.map((template) => (
           <button
             key={template.id}
             type="button"

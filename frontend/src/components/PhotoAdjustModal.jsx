@@ -1,10 +1,10 @@
 import { Layer, Stage } from "react-konva";
 import { CircularPhoto, Decorations, TemplateBackground, useCanvasImage } from "./CardPreview.jsx";
 
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 3;
+const MIN_SCALE = 0.25;
+const MAX_SCALE = 6;
 
-export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform, borderSettings, onChange, onConfirm, onCancel }) {
+export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform, designSettings, onChange, onConfirm, onCancel }) {
   const image = useCanvasImage(imageUrl);
 
   if (!isOpen) return null;
@@ -31,13 +31,13 @@ export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform
         <div className="modal-stage-wrap">
           <Stage width={template.width * 0.54} height={template.height * 0.54} scaleX={0.54} scaleY={0.54}>
             <Layer>
-              <TemplateBackground template={template} borderSettings={borderSettings} />
+              <TemplateBackground template={template} designSettings={designSettings} />
               <Decorations template={template} />
               <CircularPhoto
                 template={template}
                 image={image}
                 transform={transform}
-                borderSettings={borderSettings}
+                designSettings={designSettings}
                 draggable
                 onDragEnd={(nextPosition) => onChange({ ...transform, ...nextPosition })}
               />

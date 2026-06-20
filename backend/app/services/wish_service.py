@@ -1,9 +1,11 @@
 import json
 import os
 import re
+import base64
 from typing import Any
 
 DEFAULT_MODEL = "llama-3.3-70b-versatile"
+VISION_MODEL = "llama-3.2-11b-vision-preview"
 
 TEMPLATE_TONES = {
     "modern_dark": "stylish, confident, cool, inspiring",
@@ -46,6 +48,56 @@ def generate_birthday_wish(details: dict[str, Any]) -> dict[str, str]:
     except Exception:
         return _fallback_wish(details)
 
+def analyze_image(contents: bytes, mime_type: str) -> dict[str, Any]:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return _fallback_recommendations()
+
+    base64_image = base64.b64encode(contents).decode("utf-8")
+    data_url = f"data:{mime_type};base64,{base64_image}"
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Analyze this image and recommend a birthday card design. Return JSON with exactly these keys: cardBackgroundColor (hex color), circleBorderColor (hex color), frameShape (one of: circle, square, rounded_rect, star, heart), titleFontFamily, titleFontColor (hex), nameFontFamily, nameFontColor (hex), wishFontFamily, wishFontColor (hex). Keep colors harmonious with the image. Font families should be from: Arial, Georgia, Times New Roman, Verdana, Courier New, cursive, fantasy, monospace."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": data_url
+                            }
+                        }
+                    ]
+                }
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        content = response.choices[0].message.content or "{}"
+        return _parse_json_content(content)
+    except Exception:
+        return _fallback_recommendations()
+
+def _fallback_recommendations() -> dict[str, Any]:
+    return {
+        "cardBackgroundColor": "#111111",
+        "circleBorderColor": "#D4AF37",
+        "frameShape": "circle",
+        "titleFontFamily": "Georgia",
+        "titleFontColor": "#D4AF37",
+        "nameFontFamily": "Arial",
+        "nameFontColor": "#FFFFFF",
+        "wishFontFamily": "Verdana",
+        "wishFontColor": "#CCCCCC"
+    }
 
 def _system_prompt() -> str:
     return """

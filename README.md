@@ -1,127 +1,41 @@
 # WishGen AI
 
-WishGen AI is an AI-powered birthday card generator built around 5 professionally designed templates. Each template has a circular photo window where the user manually positions the birthday person's image with drag and zoom controls before exporting the final card.
-
-The current AI feature is English-only personalized birthday wish generation using Groq Llama 3.3, with a local fallback when no API key is configured.
+WishGen AI is a customizable birthday card editor powered by AI.
 
 ## Features
 
-- Birthday details form for name, age, relationship, vibe, hobby, and optional sender name.
-- Upload a birthday person's photo without modifying the original file.
-- Choose from 5 templates: Modern Dark, Floral Elegance, Cute Pastel, Luxury Gold, and Fun Party.
-- Generate a short personalized birthday wish with an LLM.
-- Manually drag and zoom the uploaded image inside a circular frame.
-- Preview the final card in a React Konva canvas.
-- Download the card as PNG, JPEG, or PDF.
-
-## AI Features
-
-- Groq Llama 3.3 generates the birthday wish.
-- The prompt uses name, age, relationship, personality/vibe, hobby, sender name, and template tone.
-- The backend returns structured JSON: `wish`, `short_title`, and `signature_line`.
-- If Groq is unavailable or returns invalid JSON, the backend uses a rule-based fallback.
+- **5 Unique Templates**: Choose from Modern Dark, Floral Elegance, Cute Pastel, Luxury Gold, and Fun Party.
+- **Circular Photo Frame**: Upload a photo of the birthday person and manually adjust it (drag and zoom) to perfectly fit inside the template's circular frame.
+- **Customizable Design**: Adjust card background color, circle border size, radius, border color, and all typography (font family, size, color).
+- **AI-Generated Wishes**: Enter some details about the birthday person, and the Groq LLM will generate a warm, personalized birthday wish.
+- **High-Quality Export**: Download the final, personalized birthday card as PNG, JPEG, or PDF.
 
 ## Tech Stack
 
-- Frontend: React, Vite, React Konva, Konva, jsPDF, CSS
-- Backend: FastAPI, Python, Groq SDK, python-dotenv
+- **Frontend**: React, Vite, React-Konva, jsPDF
+- **Backend**: FastAPI, Python, Groq LLM
 
-## Folder Structure
+## Getting Started
 
-```text
-wishgen-ai/
-|-- README.md
-|-- .gitignore
-|-- backend/
-|   |-- .env.example
-|   |-- requirements.txt
-|   |-- main.py
-|   `-- app/
-|       |-- routes/
-|       `-- services/
-|-- frontend/
-|   |-- .env.example
-|   |-- package.json
-|   |-- index.html
-|   `-- src/
-|       |-- App.jsx
-|       |-- styles.css
-|       |-- components/
-|       |-- data/
-|       |-- services/
-|       `-- utils/
-`-- docs/
-    |-- project-plan.md
-    `-- architecture.md
-```
+### Backend Setup
+1. `cd backend`
+2. Create and activate a virtual environment.
+3. Install dependencies: `pip install -r requirements.txt`
+4. Set your Groq API key in the `.env` file (copy from `.env.example`).
+5. Run the server: `uvicorn app.main:app --reload`
+   - Backend will run on http://localhost:8000
 
-## Backend Env Variables
+### Frontend Setup
+1. `cd frontend`
+2. Install dependencies: `npm install`
+3. Run the development server: `npm run dev`
+   - Frontend will run on http://localhost:5173
 
-Create `backend/.env` from `backend/.env.example`:
-
-```env
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=llama-3.3-70b-versatile
-```
-
-`GROQ_API_KEY` is optional for local testing. Without it, the backend uses fallback wish generation.
-
-## Run Backend
-
-```powershell
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-Backend URL: `http://localhost:8000`
-
-## Run Frontend
-
-Create `frontend/.env` from `frontend/.env.example` if needed:
-
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-Then run:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend URL: usually `http://localhost:5173`
-
-## How To Use
-
-1. Enter birthday details.
-2. Upload a photo.
-3. Select one of the 5 templates.
-4. Click `Generate Wish`.
-5. Click `Edit Photo Position`.
-6. Drag and zoom the photo inside the circular frame.
-7. Confirm the photo position.
-8. Download the card as PNG, JPEG, or PDF.
-
-## Current Limitations
-
-- Templates use canvas/CSS-style shapes instead of external artwork.
-- The card is exported from the browser canvas.
-- PDF export uses the canvas image placed into a PDF page.
-- The app is English-only.
-
-## Future Improvements
-
-- Add more professional template packs.
-- Add editable text positions and font controls.
-- Add saved projects.
-- Add print-ready export sizing.
-- Add deployment instructions.
-
-## Author
-
-Created as an individual AI undergraduate project.
+## Testing the Flow
+1. Start both servers.
+2. Fill in the birthday person's details and upload their photo.
+3. Select a template and adjust the colors and fonts in the Design Toolbar.
+4. Click "Generate Wish" to get a personalized message.
+5. Click "Edit Photo Position" to open the modal, adjust your image inside the circle, and confirm.
+6. Review the live card preview.
+7. Click the PNG, JPEG, or PDF button to download the result!
