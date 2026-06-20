@@ -1,11 +1,13 @@
-import { useState } from "react";
-import AIMessagePanel from "./components/AIMessagePanel.jsx";
-import BirthdayDetailsForm from "./components/BirthdayDetailsForm.jsx";
-import CardCanvas from "./components/CardCanvas.jsx";
+import { useRef, useState } from "react";
+import BorderStyleControls from "./components/BorderStyleControls.jsx";
+import BirthdayForm from "./components/BirthdayForm.jsx";
+import CardPreview from "./components/CardPreview.jsx";
+import DownloadOptions from "./components/DownloadOptions.jsx";
 import ImageUpload from "./components/ImageUpload.jsx";
-import ObjectSelector from "./components/ObjectSelector.jsx";
-import { generateCard, planCard } from "./services/api.js";
-import { generateInitialLayers } from "./utils/layoutGenerator.js";
+import PhotoAdjustModal from "./components/PhotoAdjustModal.jsx";
+import TemplateSelector from "./components/TemplateSelector.jsx";
+import { TEMPLATE_BY_ID } from "./data/templates.js";
+import { generateWish } from "./services/api.js";
 
 const MIN_AGE = 1;
 const MAX_AGE = 120;
@@ -14,42 +16,34 @@ const initialForm = {
   name: "",
   age: "",
   relationship: "friend",
-  occupation: "",
+  personality: "",
   interestingThing: "",
-  cardType: "modern_dark",
-  selectedObjects: ["cake"]
+  senderName: "",
+  template: "modern_dark"
+};
+
+const initialPhotoTransform = { x: 0, y: 0, scale: 1 };
+const initialBorderSettings = {
+  cardBorderStyle: "solid",
+  cardBorderColor: "#6F8F72",
+  circleBorderColor: "#6F8F72"
 };
 
 export default function App() {
+  const stageRef = useRef(null);
+  const [formData, setFormData] = useState(initialForm);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [formData, setFormData] = useState(initialForm);
-  const [aiPlan, setAiPlan] = useState(null);
-  const [themePlan, setThemePlan] = useState(null);
-  const [portraitUrl, setPortraitUrl] = useState("");
-  const [layers, setLayers] = useState([]);
-  const [initialLayers, setInitialLayers] = useState([]);
+  const [wishData, setWishData] = useState(null);
+  const [photoTransform, setPhotoTransform] = useState(initialPhotoTransform);
+  const [draftPhotoTransform, setDraftPhotoTransform] = useState(initialPhotoTransform);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isPhotoConfirmed, setIsPhotoConfirmed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState("");
-  const [objectMessage, setObjectMessage] = useState("");
+  const [borderSettings, setBorderSettings] = useState(initialBorderSettings);
 
-  const handleImageChange = (file) => {
-    setImageFile(file);
-    setAiPlan(null);
-    setThemePlan(null);
-    setPortraitUrl("");
-    setLayers([]);
-    setInitialLayers([]);
-    setError("");
-
-    if (!file) {
-      setImagePreview("");
-      return;
-    }
-
-    setImagePreview(URL.createObjectURL(file));
-  };
+  const template = TEMPLATE_BY_ID[formData.template] || TEMPLATE_BY_ID.modern_dark;
 
   const handleFormChange = (field, value) => {
     if (field === "age") {
@@ -60,69 +54,52 @@ export default function App() {
     setFormData((current) => ({ ...current, [field]: value }));
   };
 
-  const handleObjectsChange = (selectedObjects, message) => {
-    setFormData((current) => ({ ...current, selectedObjects }));
-    setObjectMessage(message);
+  const handleImageChange = (file) => {
+    setImageFile(file);
+    setIsPhotoConfirmed(false);
+    setPhotoTransform(initialPhotoTransform);
+    setDraftPhotoTransform(initialPhotoTransform);
+    setError("");
+
+    if (!file) {
+      setImagePreview("");
+      return;
+    }
+
+    setImagePreview(URL.createObjectURL(file));
   };
 
-  const validateForm = ({ requireImage }) => {
-    if (requireImage && !imageFile) {
-      return "Please upload a birthday photo first.";
-    }
+  const validateDetails = () => {
+    if (!formData.name.trim()) return "Please enter the birthday person's name.";
 
-    if (!formData.name.trim()) {
-      return "Please enter the person's name.";
-    }
-
-    const ageNumber = Number(formData.age);
-    if (!Number.isInteger(ageNumber) || ageNumber < MIN_AGE || ageNumber > MAX_AGE) {
+    const age = Number(formData.age);
+    if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
       return `Please enter a whole number age from ${MIN_AGE} to ${MAX_AGE}.`;
     }
 
-    if (formData.selectedObjects.length < 1) {
-      return "Please select at least one birthday object.";
-    }
-
-    if (formData.selectedObjects.length > 2) {
-      return "Please select no more than two birthday objects.";
-    }
-
+    if (!formData.personality.trim()) return "Please add a personality or vibe.";
+    if (!formData.interestingThing.trim()) return "Please add an interesting thing or hobby.";
     return "";
   };
 
-  const applyGeneratedPlan = (result) => {
-    const nextPortraitUrl = result.portrait_url || portraitUrl;
-    const nextAiPlan = result.ai_plan;
-    const nextLayers = generateInitialLayers({
-      cardType: formData.cardType,
-      selectedObjects: formData.selectedObjects,
-      aiPlan: nextAiPlan,
-      portraitUrl: nextPortraitUrl
-    });
-
-    setAiPlan(nextAiPlan);
-    setThemePlan(result.theme_plan);
-    setPortraitUrl(nextPortraitUrl);
-    setLayers(nextLayers);
-    setInitialLayers(nextLayers);
-  };
-
-  const handleGenerateCard = async (event) => {
+  const handleGenerateWish = async (event) => {
     event.preventDefault();
     setError("");
-    setObjectMessage("");
 
-    const validationError = validateForm({ requireImage: true });
+    const validationError = validateDetails();
     if (validationError) {
       setError(validationError);
       return;
     }
 
     setIsGenerating(true);
-
     try {
-      const result = await generateCard(formData, imageFile);
-      applyGeneratedPlan(result);
+      const result = await generateWish(formData);
+      setWishData({
+        wish: result.wish,
+        short_title: result.short_title,
+        signature_line: result.signature_line
+      });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -130,30 +107,27 @@ export default function App() {
     }
   };
 
-  const handleRegenerateText = async () => {
-    setError("");
-
-    const validationError = validateForm({ requireImage: false });
-    if (validationError) {
-      setError(validationError);
+  const openPhotoModal = () => {
+    if (!imagePreview) {
+      setError("Please upload a photo first.");
       return;
     }
 
-    setIsRegenerating(true);
-
-    try {
-      const result = await planCard(formData);
-      const nextAiPlan = result.ai_plan;
-      setAiPlan(nextAiPlan);
-      setThemePlan(result.theme_plan);
-      setLayers((current) => syncTextLayers(current, nextAiPlan));
-      setInitialLayers((current) => syncTextLayers(current, nextAiPlan));
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setIsRegenerating(false);
-    }
+    setDraftPhotoTransform(photoTransform);
+    setIsPhotoModalOpen(true);
   };
+
+  const confirmPhoto = () => {
+    setPhotoTransform(draftPhotoTransform);
+    setIsPhotoConfirmed(true);
+    setIsPhotoModalOpen(false);
+  };
+
+  const handleBorderChange = (field, value) => {
+    setBorderSettings((current) => ({ ...current, [field]: value }));
+  };
+
+  const canDownload = Boolean(wishData && imagePreview && isPhotoConfirmed);
 
   return (
     <main className="app-shell">
@@ -161,51 +135,47 @@ export default function App() {
         <aside className="control-panel">
           <div className="title-block">
             <p className="eyebrow">WishGen AI</p>
-            <h1>Interactive birthday card designer</h1>
+            <h1>Template birthday card generator</h1>
           </div>
 
-          <form onSubmit={handleGenerateCard} className="card-form">
-            <ImageUpload imagePreview={imagePreview} portraitUrl={portraitUrl} onImageChange={handleImageChange} />
-            <BirthdayDetailsForm formData={formData} onChange={handleFormChange} />
-            <ObjectSelector selectedObjects={formData.selectedObjects} onChange={handleObjectsChange} limitMessage={objectMessage} />
+          <BirthdayForm formData={formData} onChange={handleFormChange} onGenerate={handleGenerateWish} isLoading={isGenerating} />
+          <ImageUpload imagePreview={imagePreview} onImageChange={handleImageChange} />
+          <TemplateSelector selectedTemplate={formData.template} onSelect={(templateId) => handleFormChange("template", templateId)} />
+          <BorderStyleControls borderSettings={borderSettings} onChange={handleBorderChange} />
 
-            {error ? <p className="error-message">{error}</p> : null}
+          {error ? <p className="error-message">{error}</p> : null}
 
-            <button className="primary-button" type="submit" disabled={isGenerating}>
-              {isGenerating ? "Generating AI Card..." : "Generate AI Card"}
+          <div className="photo-actions">
+            <button type="button" className="secondary-button" onClick={openPhotoModal}>
+              Edit Photo Position
             </button>
-          </form>
+            <span>{isPhotoConfirmed ? "Photo confirmed" : "Photo not confirmed yet"}</span>
+          </div>
 
-          <AIMessagePanel aiPlan={aiPlan} isLoading={isRegenerating} onRegenerate={handleRegenerateText} />
+          <DownloadOptions stageRef={stageRef} name={formData.name} disabled={!canDownload} />
         </aside>
 
-        <CardCanvas
-          layers={layers}
-          setLayers={setLayers}
-          initialLayers={initialLayers}
-          formData={formData}
-          aiPlan={aiPlan}
-          themePlan={themePlan}
-        />
+        <section className="preview-panel">
+          <div className="preview-heading">
+            <p className="eyebrow">Final Preview</p>
+            <h2>{template.name}</h2>
+          </div>
+          <div className="canvas-wrap">
+            <CardPreview ref={stageRef} template={template} imageUrl={imagePreview} photoTransform={photoTransform} wishData={wishData} formData={formData} borderSettings={borderSettings} />
+          </div>
+        </section>
       </section>
+
+      <PhotoAdjustModal
+        isOpen={isPhotoModalOpen}
+        template={template}
+        imageUrl={imagePreview}
+        transform={draftPhotoTransform}
+        borderSettings={borderSettings}
+        onChange={setDraftPhotoTransform}
+        onConfirm={confirmPhoto}
+        onCancel={() => setIsPhotoModalOpen(false)}
+      />
     </main>
   );
-}
-
-function syncTextLayers(layers, aiPlan) {
-  return layers.map((layer) => {
-    if (layer.id === "headline") return { ...layer, text: aiPlan.headline };
-    if (layer.id === "name_text") return { ...layer, text: aiPlan.name_text };
-    if (layer.id === "main_wish") return { ...layer, text: aiPlan.main_wish };
-    if (layer.id === "short_tagline") return { ...layer, text: aiPlan.short_tagline };
-    if (layer.id.startsWith("object_text_")) {
-      const objectId = layer.id.replace("object_text_", "");
-      return { ...layer, text: aiPlan.object_texts?.[objectId] || layer.text };
-    }
-    if (layer.id.startsWith("badge_")) {
-      const index = Number(layer.id.replace("badge_", ""));
-      return { ...layer, text: aiPlan.decorative_words?.[index] || layer.text };
-    }
-    return layer;
-  });
 }

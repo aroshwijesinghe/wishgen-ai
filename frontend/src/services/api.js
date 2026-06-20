@@ -1,80 +1,36 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-async function request(path, options) {
+export async function generateWish(formData) {
   let response;
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, options);
+    response = await fetch(`${API_BASE_URL}/api/generate-wish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.name.trim(),
+        age: Number(formData.age),
+        relationship: formData.relationship,
+        personality: formData.personality.trim(),
+        interesting_thing: formData.interestingThing.trim(),
+        sender_name: formData.senderName.trim(),
+        template: formData.template
+      })
+    });
   } catch {
     throw new Error("Backend is not running. Start FastAPI on http://localhost:8000 and try again.");
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  const body = contentType.includes("application/json") ? await response.json() : null;
-
+  const body = await response.json();
   if (!response.ok) {
-    throw new Error(formatApiError(body?.detail));
+    throw new Error(formatApiError(body.detail));
   }
 
   return body;
 }
 
-export function processImage(imageFile) {
-  const payload = new FormData();
-  payload.append("image", imageFile);
-  return request("/api/process-image", {
-    method: "POST",
-    body: payload
-  });
-}
-
-export function planCard(formData) {
-  return request("/api/plan-card", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(toApiPayload(formData))
-  });
-}
-
-export function generateCard(formData, imageFile) {
-  const payload = new FormData();
-  const apiPayload = toApiPayload(formData);
-
-  payload.append("image", imageFile);
-  Object.entries(apiPayload).forEach(([key, value]) => {
-    payload.append(key, Array.isArray(value) ? JSON.stringify(value) : value);
-  });
-
-  return request("/api/generate-card", {
-    method: "POST",
-    body: payload
-  });
-}
-
-export function toApiPayload(formData) {
-  return {
-    name: formData.name.trim(),
-    age: Number(formData.age),
-    relationship: formData.relationship,
-    occupation: formData.occupation.trim(),
-    interesting_thing: formData.interestingThing.trim(),
-    card_type: formData.cardType,
-    selected_objects: formData.selectedObjects
-  };
-}
-
-export { API_BASE_URL };
-
 function formatApiError(detail) {
-  if (typeof detail === "string") {
-    return detail;
-  }
-
-  if (Array.isArray(detail) && detail.length > 0) {
-    return detail.map((item) => item.msg || item.detail || "Invalid input.").join(" ");
-  }
-
-  return "Something went wrong while generating the card.";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) return detail.map((item) => item.msg || "Invalid input.").join(" ");
+  return "Could not generate the birthday wish.";
 }

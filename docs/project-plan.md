@@ -2,71 +2,62 @@
 
 ## Problem Statement
 
-Generic birthday card tools often produce repetitive greetings and static templates. WishGen AI solves this by combining user details, a portrait, birthday objects, AI-planned text, and an editable card canvas into one personalized workflow.
+People want personalized birthday cards that look polished without spending time in design software. WishGen AI provides a simple flow: enter birthday details, generate a meaningful wish, place a photo into a circular template frame, and download a finished card.
 
 ## Objectives
 
-- Keep the application English-only.
-- Generate short, warm, personalized birthday wishes.
-- Use occupation only as context, never as direct card text.
-- Let the user choose exactly one card type: `modern_dark`, `floral`, `cute`, or `luxury`.
-- Let the user choose one or two birthday objects from the fixed 20-object list.
-- Process the uploaded image into a transparent upper-body portrait without cutting hair.
-- Provide an interactive editor where text, portrait, and objects can be adjusted before download.
+- Keep the product English-only.
+- Provide 5 visually different birthday card templates.
+- Use AI only for personalized birthday wish generation.
+- Let users manually position the uploaded photo inside a circular frame.
+- Preserve the original uploaded photo and only adjust its display transform.
+- Support PNG, JPEG, and PDF download.
 
 ## User Inputs
 
-- `image`
-- `name`
-- `age`
-- `relationship`
-- `occupation`
-- `interesting_thing`
-- `card_type`
-- `selected_objects`
+- Birthday person name
+- Age
+- Relationship
+- Personality or vibe
+- Interesting thing / hobby
+- Optional sender name
+- Template selection
+- Image upload
 
-## AI Card Planner
+## AI Birthday Wish
 
-The backend planner accepts the birthday details and returns JSON with:
+The backend exposes `POST /api/generate-wish`. It accepts birthday details and returns:
 
-- `headline`
-- `name_text`
-- `main_wish`
-- `object_texts`
-- `short_tagline`
-- `decorative_words`
-- `tone`
+- `wish`
+- `short_title`
+- `signature_line`
 
-Groq Llama 3.3 is used when `GROQ_API_KEY` is configured. If the key is missing, the API fails, or invalid JSON is returned, the backend falls back to a local rule-based planner. The fallback still uses the user's name, age, relationship, interesting thing, selected objects, and card type.
+Groq Llama 3.3 is used when `GROQ_API_KEY` is available. The generated wish should be 1 or 2 short English sentences, personalized, meaningful, and card-friendly. If Groq is unavailable, the backend uses a local fallback generator.
 
-## Background Removal
+## Templates
 
-The backend uses `rembg` to remove the uploaded image background and saves a transparent PNG under `backend/static/processed`. If background removal fails, the backend saves an RGBA copy so the rest of the card flow can continue.
+The frontend defines these templates in `frontend/src/data/templates.js`:
 
-## Portrait Crop
+- Modern Dark
+- Floral Elegance
+- Cute Pastel
+- Luxury Gold
+- Fun Party
 
-The portrait service loads the background-removed PNG as RGBA and uses the alpha channel to find visible person pixels. It crops the upper body using the alpha mask bounds, adds top padding to protect hair, adds side padding, and saves a transparent portrait PNG.
+Each template defines canvas size, colors, font choices, decorative style, text positions, and a circular image frame.
 
-## Interactive Card Editor
+## Manual Photo Positioning
 
-The frontend uses React Konva to render a 4:5 card canvas. It creates layers for:
+The uploaded photo is rendered in a circular clipped area using React Konva. A modal lets the user drag the image, zoom in, zoom out, reset, cancel, or confirm. No background removal or automatic crop is performed.
 
-- background
-- portrait
-- headline text
-- name text
-- main wish
-- selected objects
-- object text
-- tagline
-- decorative badges
+## Card Preview And Export
 
-Users can drag layers, select text, adjust font size, color, font family, bold/normal styling, edit text, reset the layout, and download the final card as a PNG.
+The final card is rendered with React Konva. The browser exports the canvas as PNG or JPEG. PDF export uses jsPDF to place the card image on a PDF page.
 
 ## Future Scope
 
-- Add custom object asset packs.
-- Add multiple layouts for each card type.
-- Add more robust face-aware portrait placement.
-- Add saved projects and card history.
-- Add production deployment and storage.
+- Add more templates.
+- Add editable text layer controls.
+- Add print-ready sizing.
+- Add persistent project storage.
+- Add share links or gallery history.

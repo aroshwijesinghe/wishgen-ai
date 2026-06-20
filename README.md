@@ -1,35 +1,30 @@
 # WishGen AI
 
-WishGen AI is an AI-powered interactive birthday card designer. Users upload a portrait, enter birthday details, choose a card type and one or two birthday objects, then generate an editable birthday card with AI-planned text and a background-removed upper-body portrait.
+WishGen AI is an AI-powered birthday card generator built around 5 professionally designed templates. Each template has a circular photo window where the user manually positions the birthday person's image with drag and zoom controls before exporting the final card.
 
-The application is English-only. Occupation is used only as hidden AI context and must not be printed directly on the card.
+The current AI feature is English-only personalized birthday wish generation using Groq Llama 3.3, with a local fallback when no API key is configured.
 
 ## Features
 
-- Upload JPG, PNG, or WebP portraits.
-- Remove image background and create a transparent upper-half portrait crop.
-- Generate personalized English birthday wishes with Groq Llama 3.3 when configured.
-- Use a local fallback planner when no Groq key is available.
-- Choose one card type: Modern Dark, Floral, Cute, or Luxury.
-- Select one or two birthday objects from a 20-object list.
-- Render selected objects and object-specific AI text on the card.
-- Edit, drag, and restyle text/object layers in a React Konva canvas.
-- Download the final card as a PNG.
+- Birthday details form for name, age, relationship, vibe, hobby, and optional sender name.
+- Upload a birthday person's photo without modifying the original file.
+- Choose from 5 templates: Modern Dark, Floral Elegance, Cute Pastel, Luxury Gold, and Fun Party.
+- Generate a short personalized birthday wish with an LLM.
+- Manually drag and zoom the uploaded image inside a circular frame.
+- Preview the final card in a React Konva canvas.
+- Download the card as PNG, JPEG, or PDF.
 
 ## AI Features
 
-- Background removal using `rembg`.
-- Alpha-mask portrait crop that preserves head/hair padding.
-- AI card planner for headline, name text, main wish, object text, tagline, decorative words, and tone.
-- Theme-aware design planning for each card type.
-- Fallback rule-based planner if Groq is unavailable or returns invalid output.
+- Groq Llama 3.3 generates the birthday wish.
+- The prompt uses name, age, relationship, personality/vibe, hobby, sender name, and template tone.
+- The backend returns structured JSON: `wish`, `short_title`, and `signature_line`.
+- If Groq is unavailable or returns invalid JSON, the backend uses a rule-based fallback.
 
 ## Tech Stack
 
-- Frontend: React, Vite, React Konva, Konva, CSS
-- Backend: FastAPI, Python, Pillow, OpenCV, NumPy, rembg, onnxruntime
-- AI text: Groq SDK with `llama-3.3-70b-versatile`
-- Environment: python-dotenv
+- Frontend: React, Vite, React Konva, Konva, jsPDF, CSS
+- Backend: FastAPI, Python, Groq SDK, python-dotenv
 
 ## Folder Structure
 
@@ -37,6 +32,13 @@ The application is English-only. Occupation is used only as hidden AI context an
 wishgen-ai/
 |-- README.md
 |-- .gitignore
+|-- backend/
+|   |-- .env.example
+|   |-- requirements.txt
+|   |-- main.py
+|   `-- app/
+|       |-- routes/
+|       `-- services/
 |-- frontend/
 |   |-- .env.example
 |   |-- package.json
@@ -48,24 +50,12 @@ wishgen-ai/
 |       |-- data/
 |       |-- services/
 |       `-- utils/
-|-- backend/
-|   |-- .env.example
-|   |-- requirements.txt
-|   |-- main.py
-|   |-- static/
-|   |   |-- uploads/
-|   |   |-- processed/
-|   |   `-- cards/
-|   `-- app/
-|       |-- routes/
-|       |-- services/
-|       `-- utils/
 `-- docs/
     |-- project-plan.md
     `-- architecture.md
 ```
 
-## Backend Environment
+## Backend Env Variables
 
 Create `backend/.env` from `backend/.env.example`:
 
@@ -74,7 +64,7 @@ GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-`GROQ_API_KEY` is optional for local testing. If it is missing, the app uses the fallback planner.
+`GROQ_API_KEY` is optional for local testing. Without it, the backend uses fallback wish generation.
 
 ## Run Backend
 
@@ -106,28 +96,31 @@ npm run dev
 
 Frontend URL: usually `http://localhost:5173`
 
-## Using Groq Llama 3.3
+## How To Use
 
-1. Add your Groq key to `backend/.env`.
-2. Keep `GROQ_MODEL=llama-3.3-70b-versatile` or replace it with another compatible Groq model.
-3. Restart the FastAPI server.
-
-The backend asks Groq for valid JSON only. If the API call fails or returns invalid JSON, WishGen AI falls back to local rule-based text generation.
+1. Enter birthday details.
+2. Upload a photo.
+3. Select one of the 5 templates.
+4. Click `Generate Wish`.
+5. Click `Edit Photo Position`.
+6. Drag and zoom the photo inside the circular frame.
+7. Confirm the photo position.
+8. Download the card as PNG, JPEG, or PDF.
 
 ## Current Limitations
 
-- The frontend uses simple Konva shapes/text/emoji fallbacks for birthday objects.
-- The Pillow compatibility card is simple compared with the interactive frontend canvas.
-- The first `rembg` run may download the U2Net model and take longer.
-- Advanced face detection and template asset packs are not included yet.
+- Templates use canvas/CSS-style shapes instead of external artwork.
+- The card is exported from the browser canvas.
+- PDF export uses the canvas image placed into a PDF page.
+- The app is English-only.
 
 ## Future Improvements
 
-- Replace object fallbacks with custom designed transparent assets.
-- Add more card layouts per theme.
-- Add face-aware portrait placement.
-- Add saved card history and sharing.
-- Add deployment instructions for production hosting.
+- Add more professional template packs.
+- Add editable text positions and font controls.
+- Add saved projects.
+- Add print-ready export sizing.
+- Add deployment instructions.
 
 ## Author
 

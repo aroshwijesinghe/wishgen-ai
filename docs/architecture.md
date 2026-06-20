@@ -2,85 +2,78 @@
 
 ## Overall Workflow
 
-1. User opens the React frontend.
-2. User uploads a portrait and enters birthday details.
-3. User selects one card type and one or two birthday objects.
-4. Frontend sends a multipart request to `POST /api/generate-card`.
-5. Backend validates the input and saves the uploaded image.
-6. Backend removes the background and saves a transparent PNG.
-7. Backend crops an upper-body portrait using the alpha mask.
-8. Backend generates an AI card plan and theme plan.
-9. Backend returns static URLs and JSON plans.
-10. Frontend builds editable Konva layers from the response.
-11. User edits the card and downloads the final PNG from the canvas.
+1. User enters birthday details in the React frontend.
+2. User uploads a photo.
+3. User selects one of 5 templates.
+4. Frontend calls `POST /api/generate-wish`.
+5. Backend returns an AI-generated wish JSON response.
+6. User opens the photo adjustment modal.
+7. React Konva clips the photo inside the template's circular frame.
+8. User drags/zooms the photo and confirms the transform.
+9. Final preview renders the selected template, photo, title, name, wish, and signature.
+10. User downloads PNG, JPEG, or PDF.
 
 ## Frontend/Backend Communication
 
-Primary endpoint:
+Endpoint:
 
 ```text
-POST http://localhost:8000/api/generate-card
+POST http://localhost:8000/api/generate-wish
 ```
 
-Multipart fields:
-
-- `image`
-- `name`
-- `age`
-- `relationship`
-- `occupation`
-- `interesting_thing`
-- `card_type`
-- `selected_objects`
-
-`selected_objects` is sent as a JSON string for multipart requests, for example:
-
-```json
-["cake", "code_symbol"]
-```
-
-Card type internal IDs:
-
-- `modern_dark`
-- `floral`
-- `cute`
-- `luxury`
-
-Additional endpoints:
-
-- `POST /api/process-image`
-- `POST /api/plan-card`
-- `GET /static/...`
-
-## Backend Services
-
-- `image_service.py`: validates JPG, PNG, and WebP uploads and saves originals.
-- `background_service.py`: removes background with `rembg` and falls back to an RGBA copy if needed.
-- `portrait_service.py`: alpha-mask upper-body crop with top and side padding.
-- `ai_card_planner_service.py`: Groq-backed planner with safe JSON parsing and fallback generation.
-- `theme_plan_service.py`: card type color/font/layout guidance.
-- `card_service.py`: simple Pillow card generation for compatibility.
-- `file_utils.py`: static directory and URL helpers.
-
-## AI Planner Output JSON
+Request JSON:
 
 ```json
 {
-  "headline": "Happy Birthday",
-  "name_text": "Kalindu!",
-  "main_wish": "Happy Birthday, Kalindu! May your ideas keep turning into bright wins.",
-  "object_texts": {
-    "cake": "Kalindu, the Python guy",
-    "code_symbol": "Dreams loading in Python"
-  },
-  "short_tagline": "Code, cake, and celebration!",
-  "decorative_words": ["Dreamer", "Problem Solver", "Keep Shining"],
-  "tone": "cool, friendly, and inspiring"
+  "name": "Kalindu",
+  "age": 22,
+  "relationship": "friend",
+  "personality": "creative and funny",
+  "interesting_thing": "loves Python and guitar",
+  "sender_name": "Arosh",
+  "template": "modern_dark"
 }
 ```
 
-The planner must not print occupation directly. Occupation is context only.
+Response JSON:
+
+```json
+{
+  "success": true,
+  "wish": "Happy Birthday, Kalindu! May your creativity keep turning simple ideas into unforgettable moments.",
+  "short_title": "Happy Birthday",
+  "signature_line": "With warm wishes, Arosh"
+}
+```
+
+## Backend Services
+
+- `main.py`: creates the FastAPI app, enables CORS, includes API routes.
+- `routes/card_routes.py`: defines health-adjacent card API routes, currently `/api/generate-wish`.
+- `services/wish_service.py`: calls Groq Llama 3.3 and falls back to a local generator.
+
+## Frontend Modules
+
+- `data/templates.js`: 5 template definitions, including circular frame geometry and text positions.
+- `services/api.js`: frontend API helper for wish generation.
+- `components/BirthdayForm.jsx`: birthday detail form.
+- `components/ImageUpload.jsx`: local image upload and preview.
+- `components/TemplateSelector.jsx`: visual template picker.
+- `components/CardPreview.jsx`: React Konva final card renderer.
+- `components/PhotoAdjustModal.jsx`: drag/zoom circular-frame photo positioning.
+- `components/DownloadOptions.jsx`: PNG, JPEG, and PDF export buttons.
+- `utils/exportCard.js`: Konva/jsPDF export helpers.
 
 ## Card Rendering Flow
 
-The frontend receives `portrait_url`, `ai_plan`, and `theme_plan`. `layoutGenerator.js` converts those into Konva layers for the canvas. The user can drag the portrait, text, and selected objects, edit text content, adjust text styling, reset the layout, and export the canvas with `stage.toDataURL()`.
+The frontend keeps the image transform in state:
+
+```json
+{
+  "x": 0,
+  "y": 0,
+  "scale": 1
+}
+```
+
+The transform is applied only to how the image is displayed inside the circular frame. The original image file remains unchanged.
