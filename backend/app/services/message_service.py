@@ -1,14 +1,8 @@
-def generate_birthday_message(name: str, age: int, relationship: str, language: str) -> str:
-    """Generate a simple rule-based birthday message without paid APIs."""
+def generate_birthday_message(name: str, age: int, relationship: str, theme: str) -> str:
+    """Generate a simple English birthday message without paid APIs."""
     clean_name = name.strip().title() or "You"
     clean_relationship = relationship.strip().lower() or "friend"
-    language_key = language.strip().lower()
-
-    if language_key == "sinhala":
-        return f"Suba upandinayak wewa, {clean_name}! Obata sathuta, saubhagya, saha adaraya pirunu awuruddak wewa."
-
-    if language_key == "tamil":
-        return f"Iniya pirantha naal vazhthukkal, {clean_name}! Sandhoshamum anbum niraintha aandaga irukkattum."
+    clean_theme = theme.strip().lower() or "birthday"
 
     relationship_lines = {
         "mother": "Your love makes every day brighter.",
@@ -22,5 +16,6 @@ def generate_birthday_message(name: str, age: int, relationship: str, language: 
 
     age_line = f"Cheers to {age} wonderful years." if age > 0 else "Cheers to another wonderful year."
     relationship_line = relationship_lines.get(clean_relationship, relationship_lines["friend"])
+    theme_line = f"May your day feel {clean_theme}, bright, and unforgettable."
 
-    return f"Happy Birthday, {clean_name}! {age_line} {relationship_line}"
+    return f"Happy Birthday, {clean_name}! {age_line} {relationship_line} {theme_line}"

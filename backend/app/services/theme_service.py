@@ -5,18 +5,13 @@ def select_theme(age: int, relationship: str, requested_theme: str) -> str:
     if requested and requested != "auto":
         return requested
 
-    relationship_key = relationship.strip().lower()
+    if age and age < 13:
+        return "colorful"
 
-    if age and age <= 12:
-        return "kids"
+    if age and age <= 25:
+        return "vibrant"
 
-    if relationship_key == "partner":
-        return "romantic"
-
-    if relationship_key in {"mother", "father"}:
-        return "elegant"
-
-    if relationship_key == "colleague":
+    if age and age > 25:
         return "classic"
 
     return "fun"

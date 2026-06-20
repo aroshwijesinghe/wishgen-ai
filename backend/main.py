@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.routes.card_routes import router as card_router
-from app.utils.file_utils import generated_cards_dir
+from app.utils.file_utils import static_dir
 
 app = FastAPI(title="WishGen AI API", version="0.1.0")
 
@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/api/generated-cards", StaticFiles(directory=generated_cards_dir()), name="generated-cards")
+app.mount("/static", StaticFiles(directory=static_dir()), name="static")
 app.include_router(card_router)
 
 

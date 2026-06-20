@@ -7,10 +7,13 @@ from app.utils.file_utils import build_unique_filename, ensure_asset_dirs, gener
 
 THEME_COLORS = {
     "classic": {"background": "#f7f2e8", "accent": "#2f5d62", "text": "#1f2933"},
+    "colorful": {"background": "#fff7cc", "accent": "#e11d48", "text": "#1f2933"},
     "fun": {"background": "#fff1f2", "accent": "#db2777", "text": "#2d1b2f"},
     "elegant": {"background": "#f4f1ff", "accent": "#5b21b6", "text": "#20134a"},
     "kids": {"background": "#ecfeff", "accent": "#0891b2", "text": "#164e63"},
+    "modern": {"background": "#ecfdf5", "accent": "#047857", "text": "#064e3b"},
     "romantic": {"background": "#fff7ed", "accent": "#c2410c", "text": "#431407"},
+    "vibrant": {"background": "#eef2ff", "accent": "#4f46e5", "text": "#111827"},
 }
 
 

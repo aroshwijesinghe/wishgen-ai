@@ -1,29 +1,46 @@
 import { useState } from "react";
-import BirthdayForm from "./components/BirthdayForm.jsx";
-import CardPreview from "./components/CardPreview.jsx";
+import AIMessagePanel from "./components/AIMessagePanel.jsx";
+import BirthdayDetailsForm from "./components/BirthdayDetailsForm.jsx";
+import CardCanvas from "./components/CardCanvas.jsx";
 import ImageUpload from "./components/ImageUpload.jsx";
+import ObjectSelector from "./components/ObjectSelector.jsx";
+import { generateCard, planCard } from "./services/api.js";
+import { generateInitialLayers } from "./utils/layoutGenerator.js";
 
-const API_BASE_URL = "http://localhost:8000";
+const MIN_AGE = 1;
+const MAX_AGE = 120;
 
 const initialForm = {
   name: "",
   age: "",
   relationship: "friend",
-  language: "English",
-  theme: "auto"
+  occupation: "",
+  interestingThing: "",
+  cardType: "Modern Dark",
+  selectedObjects: ["cake"]
 };
 
 export default function App() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [formData, setFormData] = useState(initialForm);
-  const [generatedCard, setGeneratedCard] = useState(null);
+  const [aiPlan, setAiPlan] = useState(null);
+  const [themePlan, setThemePlan] = useState(null);
+  const [portraitUrl, setPortraitUrl] = useState("");
+  const [layers, setLayers] = useState([]);
+  const [initialLayers, setInitialLayers] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState("");
+  const [objectMessage, setObjectMessage] = useState("");
 
   const handleImageChange = (file) => {
     setImageFile(file);
-    setGeneratedCard(null);
+    setAiPlan(null);
+    setThemePlan(null);
+    setPortraitUrl("");
+    setLayers([]);
+    setInitialLayers([]);
     setError("");
 
     if (!file) {
@@ -35,49 +52,77 @@ export default function App() {
   };
 
   const handleFormChange = (field, value) => {
+    if (field === "age") {
+      setFormData((current) => ({ ...current, age: value.replace(/\D/g, "") }));
+      return;
+    }
+
     setFormData((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleObjectsChange = (selectedObjects, message) => {
+    setFormData((current) => ({ ...current, selectedObjects }));
+    setObjectMessage(message);
+  };
+
+  const validateForm = ({ requireImage }) => {
+    if (requireImage && !imageFile) {
+      return "Please upload a birthday photo first.";
+    }
+
+    if (!formData.name.trim()) {
+      return "Please enter the person's name.";
+    }
+
+    const ageNumber = Number(formData.age);
+    if (!Number.isInteger(ageNumber) || ageNumber < MIN_AGE || ageNumber > MAX_AGE) {
+      return `Please enter a whole number age from ${MIN_AGE} to ${MAX_AGE}.`;
+    }
+
+    if (formData.selectedObjects.length < 1) {
+      return "Please select at least one birthday object.";
+    }
+
+    if (formData.selectedObjects.length > 2) {
+      return "Please select no more than two birthday objects.";
+    }
+
+    return "";
+  };
+
+  const applyGeneratedPlan = (result) => {
+    const nextPortraitUrl = result.portrait_url || portraitUrl;
+    const nextAiPlan = result.ai_plan;
+    const nextLayers = generateInitialLayers({
+      cardType: formData.cardType,
+      selectedObjects: formData.selectedObjects,
+      aiPlan: nextAiPlan,
+      portraitUrl: nextPortraitUrl
+    });
+
+    setAiPlan(nextAiPlan);
+    setThemePlan(result.theme_plan);
+    setPortraitUrl(nextPortraitUrl);
+    setLayers(nextLayers);
+    setInitialLayers(nextLayers);
   };
 
   const handleGenerateCard = async (event) => {
     event.preventDefault();
     setError("");
-    setGeneratedCard(null);
+    setObjectMessage("");
 
-    if (!imageFile) {
-      setError("Please upload a birthday photo first.");
+    const validationError = validateForm({ requireImage: true });
+    if (validationError) {
+      setError(validationError);
       return;
     }
-
-    if (!formData.name.trim()) {
-      setError("Please enter the person's name.");
-      return;
-    }
-
-    const payload = new FormData();
-    payload.append("image", imageFile);
-    payload.append("name", formData.name);
-    payload.append("age", formData.age || "0");
-    payload.append("relationship", formData.relationship);
-    payload.append("language", formData.language);
-    payload.append("theme", formData.theme);
 
     setIsGenerating(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/generate-card`, {
-        method: "POST",
-        body: payload
-      });
-
-      if (!response.ok) {
-        throw new Error("Card generation failed. Please check the backend server.");
-      }
-
-      const result = await response.json();
-      setGeneratedCard({
-        ...result,
-        cardUrl: `${API_BASE_URL}${result.card_url}`
-      });
+      const result = await generateCard(formData, imageFile);
+      applyGeneratedPlan(result);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -85,37 +130,82 @@ export default function App() {
     }
   };
 
+  const handleRegenerateText = async () => {
+    setError("");
+
+    const validationError = validateForm({ requireImage: false });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsRegenerating(true);
+
+    try {
+      const result = await planCard(formData);
+      const nextAiPlan = result.ai_plan;
+      setAiPlan(nextAiPlan);
+      setThemePlan(result.theme_plan);
+      setLayers((current) => syncTextLayers(current, nextAiPlan));
+      setInitialLayers((current) => syncTextLayers(current, nextAiPlan));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   return (
     <main className="app-shell">
-      <section className="workspace">
-        <div className="editor-panel">
+      <section className="designer-workspace">
+        <aside className="control-panel">
           <div className="title-block">
             <p className="eyebrow">WishGen AI</p>
-            <h1>Create a personalized birthday card</h1>
+            <h1>Interactive birthday card designer</h1>
           </div>
 
           <form onSubmit={handleGenerateCard} className="card-form">
-            <ImageUpload
-              imagePreview={imagePreview}
-              onImageChange={handleImageChange}
-            />
-            <BirthdayForm formData={formData} onChange={handleFormChange} />
+            <ImageUpload imagePreview={imagePreview} portraitUrl={portraitUrl} onImageChange={handleImageChange} />
+            <BirthdayDetailsForm formData={formData} onChange={handleFormChange} />
+            <ObjectSelector selectedObjects={formData.selectedObjects} onChange={handleObjectsChange} limitMessage={objectMessage} />
 
             {error ? <p className="error-message">{error}</p> : null}
 
             <button className="primary-button" type="submit" disabled={isGenerating}>
-              {isGenerating ? "Generating..." : "Generate Birthday Card"}
+              {isGenerating ? "Generating AI Card..." : "Generate AI Card"}
             </button>
           </form>
-        </div>
 
-        <CardPreview
-          generatedCard={generatedCard}
-          imagePreview={imagePreview}
+          <AIMessagePanel aiPlan={aiPlan} isLoading={isRegenerating} onRegenerate={handleRegenerateText} />
+        </aside>
+
+        <CardCanvas
+          layers={layers}
+          setLayers={setLayers}
+          initialLayers={initialLayers}
           formData={formData}
-          isGenerating={isGenerating}
+          aiPlan={aiPlan}
+          themePlan={themePlan}
         />
       </section>
     </main>
   );
+}
+
+function syncTextLayers(layers, aiPlan) {
+  return layers.map((layer) => {
+    if (layer.id === "headline") return { ...layer, text: aiPlan.headline };
+    if (layer.id === "name_text") return { ...layer, text: aiPlan.name_text };
+    if (layer.id === "main_wish") return { ...layer, text: aiPlan.main_wish };
+    if (layer.id === "short_tagline") return { ...layer, text: aiPlan.short_tagline };
+    if (layer.id.startsWith("object_text_")) {
+      const objectId = layer.id.replace("object_text_", "");
+      return { ...layer, text: aiPlan.object_texts?.[objectId] || layer.text };
+    }
+    if (layer.id.startsWith("badge_")) {
+      const index = Number(layer.id.replace("badge_", ""));
+      return { ...layer, text: aiPlan.decorative_words?.[index] || layer.text };
+    }
+    return layer;
+  });
 }

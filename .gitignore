@@ -12,6 +12,12 @@ assets/uploads/*
 assets/generated-cards/*
 !assets/uploads/.gitkeep
 !assets/generated-cards/.gitkeep
+backend/static/uploads/*
+backend/static/processed/*
+backend/static/cards/*
+!backend/static/uploads/.gitkeep
+!backend/static/processed/.gitkeep
+!backend/static/cards/.gitkeep
 
 # Node
 node_modules/
@@ -24,6 +30,8 @@ pnpm-debug.log*
 # Environment files
 .env
 .env.*
+!.env.example
+!backend/.env.example
 
 # Editor and OS files
 .DS_Store
