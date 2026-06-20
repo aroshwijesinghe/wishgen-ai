@@ -1,36 +1,86 @@
 # WishGen AI Architecture
 
-WishGen AI is split into a React frontend and a FastAPI backend.
+## Overall Workflow
 
-## Frontend
+1. User opens the React frontend.
+2. User uploads a portrait and enters birthday details.
+3. User selects one card type and one or two birthday objects.
+4. Frontend sends a multipart request to `POST /api/generate-card`.
+5. Backend validates the input and saves the uploaded image.
+6. Backend removes the background and saves a transparent PNG.
+7. Backend crops an upper-body portrait using the alpha mask.
+8. Backend generates an AI card plan and theme plan.
+9. Backend returns static URLs and JSON plans.
+10. Frontend builds editable Konva layers from the response.
+11. User edits the card and downloads the final PNG from the canvas.
 
-The frontend collects user input, sends a multipart request to the backend, and displays the generated card image returned by the API.
+## Frontend/Backend Communication
 
-Main files:
+Primary endpoint:
 
-- `src/App.jsx` coordinates form state and API calls.
-- `src/components/ImageUpload.jsx` handles local image selection.
-- `src/components/BirthdayForm.jsx` contains birthday detail fields.
-- `src/components/CardPreview.jsx` displays the generated result.
+```text
+POST http://localhost:8000/api/generate-card
+```
 
-## Backend
+Multipart fields:
 
-The backend exposes a small API and keeps business logic separated into services.
+- `image`
+- `name`
+- `age`
+- `relationship`
+- `occupation`
+- `interesting_thing`
+- `card_type`
+- `selected_objects`
 
-Main layers:
+`selected_objects` is sent as a JSON string for multipart requests, for example:
 
-- `routes/card_routes.py` defines HTTP endpoints.
-- `services/image_service.py` saves uploaded images.
-- `services/message_service.py` generates rule-based wishes.
-- `services/theme_service.py` selects a card theme.
-- `services/card_service.py` renders the card image with Pillow.
-- `utils/file_utils.py` centralizes asset paths and filename helpers.
+```json
+["cake", "code_symbol"]
+```
 
-## Future AI Integration
+Card type internal IDs:
 
-The service layout is intentionally modular. Later AI capabilities can be added without changing the public API shape:
+- `modern_dark`
+- `floral`
+- `cute`
+- `luxury`
 
-- Background removal can extend `image_service.py`.
-- Face and emotion detection can be added as new services.
-- Theme recommendation can replace or extend `theme_service.py`.
-- LLM-generated messages can replace the implementation inside `message_service.py`.
+Additional endpoints:
+
+- `POST /api/process-image`
+- `POST /api/plan-card`
+- `GET /static/...`
+
+## Backend Services
+
+- `image_service.py`: validates JPG, PNG, and WebP uploads and saves originals.
+- `background_service.py`: removes background with `rembg` and falls back to an RGBA copy if needed.
+- `portrait_service.py`: alpha-mask upper-body crop with top and side padding.
+- `ai_card_planner_service.py`: Groq-backed planner with safe JSON parsing and fallback generation.
+- `theme_plan_service.py`: card type color/font/layout guidance.
+- `card_service.py`: simple Pillow card generation for compatibility.
+- `file_utils.py`: static directory and URL helpers.
+
+## AI Planner Output JSON
+
+```json
+{
+  "headline": "Happy Birthday",
+  "name_text": "Kalindu!",
+  "main_wish": "Happy Birthday, Kalindu! May your ideas keep turning into bright wins.",
+  "object_texts": {
+    "cake": "Kalindu, the Python guy",
+    "code_symbol": "Dreams loading in Python"
+  },
+  "short_tagline": "Code, cake, and celebration!",
+  "decorative_words": ["Dreamer", "Problem Solver", "Keep Shining"],
+  "tone": "cool, friendly, and inspiring"
+}
+```
+
+The planner must not print occupation directly. Occupation is context only.
+
+## Card Rendering Flow
+
+The frontend receives `portrait_url`, `ai_plan`, and `theme_plan`. `layoutGenerator.js` converts those into Konva layers for the canvas. The user can drag the portrait, text, and selected objects, edit text content, adjust text styling, reset the layout, and export the canvas with `stage.toDataURL()`.

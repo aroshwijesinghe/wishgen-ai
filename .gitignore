@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
@@ -12,10 +13,17 @@ assets/uploads/*
 assets/generated-cards/*
 !assets/uploads/.gitkeep
 !assets/generated-cards/.gitkeep
+backend/static/uploads/*
+backend/static/processed/*
+backend/static/cards/*
+!backend/static/uploads/.gitkeep
+!backend/static/processed/.gitkeep
+!backend/static/cards/.gitkeep
 
 # Node
 node_modules/
 dist/
+build/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -24,6 +32,9 @@ pnpm-debug.log*
 # Environment files
 .env
 .env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
 
 # Editor and OS files
 .DS_Store

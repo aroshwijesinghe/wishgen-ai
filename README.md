@@ -1,81 +1,84 @@
 # WishGen AI
 
-WishGen AI is an AI-ready personalized birthday card generator. Users can upload a human image, enter birthday details, choose a style, and generate a birthday wish card.
+WishGen AI is an AI-powered interactive birthday card designer. Users upload a portrait, enter birthday details, choose a card type and one or two birthday objects, then generate an editable birthday card with AI-planned text and a background-removed upper-body portrait.
 
-The first version is a clean MVP with rule-based message generation and Pillow-based card rendering. It does not require paid APIs.
+The application is English-only. Occupation is used only as hidden AI context and must not be printed directly on the card.
 
 ## Features
 
-- Upload a birthday person's image
-- Enter name, age, relationship, language, and preferred style
-- Generate a personalized birthday message with simple rules
-- Create a basic birthday card image using Pillow
-- Preview the generated card in the React frontend
-- Backend service layout prepared for future AI modules
+- Upload JPG, PNG, or WebP portraits.
+- Remove image background and create a transparent upper-half portrait crop.
+- Generate personalized English birthday wishes with Groq Llama 3.3 when configured.
+- Use a local fallback planner when no Groq key is available.
+- Choose one card type: Modern Dark, Floral, Cute, or Luxury.
+- Select one or two birthday objects from a 20-object list.
+- Render selected objects and object-specific AI text on the card.
+- Edit, drag, and restyle text/object layers in a React Konva canvas.
+- Download the final card as a PNG.
+
+## AI Features
+
+- Background removal using `rembg`.
+- Alpha-mask portrait crop that preserves head/hair padding.
+- AI card planner for headline, name text, main wish, object text, tagline, decorative words, and tone.
+- Theme-aware design planning for each card type.
+- Fallback rule-based planner if Groq is unavailable or returns invalid output.
 
 ## Tech Stack
 
-- Frontend: React + Vite
-- Backend: Python FastAPI
-- Image processing: Pillow, OpenCV
-- Future AI modules: rembg, DeepFace, MediaPipe, LLM APIs
+- Frontend: React, Vite, React Konva, Konva, CSS
+- Backend: FastAPI, Python, Pillow, OpenCV, NumPy, rembg, onnxruntime
+- AI text: Groq SDK with `llama-3.3-70b-versatile`
+- Environment: python-dotenv
 
-## Project Structure
+## Folder Structure
 
 ```text
 wishgen-ai/
-├── README.md
-├── .gitignore
-├── frontend/
-│   ├── package.json
-│   ├── index.html
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── styles.css
-│       └── components/
-│           ├── ImageUpload.jsx
-│           ├── BirthdayForm.jsx
-│           └── CardPreview.jsx
-├── backend/
-│   ├── requirements.txt
-│   ├── main.py
-│   └── app/
-│       ├── __init__.py
-│       ├── routes/
-│       │   ├── __init__.py
-│       │   └── card_routes.py
-│       ├── services/
-│       │   ├── __init__.py
-│       │   ├── image_service.py
-│       │   ├── message_service.py
-│       │   ├── theme_service.py
-│       │   └── card_service.py
-│       └── utils/
-│           ├── __init__.py
-│           └── file_utils.py
-├── docs/
-│   ├── project-plan.md
-│   └── architecture.md
-└── assets/
-    ├── uploads/
-    ├── generated-cards/
-    └── templates/
+|-- README.md
+|-- .gitignore
+|-- frontend/
+|   |-- .env.example
+|   |-- package.json
+|   |-- index.html
+|   `-- src/
+|       |-- App.jsx
+|       |-- styles.css
+|       |-- components/
+|       |-- data/
+|       |-- services/
+|       `-- utils/
+|-- backend/
+|   |-- .env.example
+|   |-- requirements.txt
+|   |-- main.py
+|   |-- static/
+|   |   |-- uploads/
+|   |   |-- processed/
+|   |   `-- cards/
+|   `-- app/
+|       |-- routes/
+|       |-- services/
+|       `-- utils/
+`-- docs/
+    |-- project-plan.md
+    `-- architecture.md
 ```
 
-## Frontend Setup
+## Backend Environment
 
-```bash
-cd frontend
-npm install
-npm run dev
+Create `backend/.env` from `backend/.env.example`:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-The frontend runs at the Vite URL shown in your terminal, usually `http://localhost:5173`.
+`GROQ_API_KEY` is optional for local testing. If it is missing, the app uses the fallback planner.
 
-## Backend Setup
+## Run Backend
 
-```bash
+```powershell
 cd backend
 python -m venv venv
 venv\Scripts\activate
@@ -83,29 +86,49 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-On macOS or Linux, activate the virtual environment with:
+Backend URL: `http://localhost:8000`
 
-```bash
-source venv/bin/activate
+## Run Frontend
+
+Create `frontend/.env` from `frontend/.env.example` if needed:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
-The backend runs at `http://localhost:8000`.
+Then run:
 
-## API Endpoints
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-- `GET /` - health check
-- `POST /api/generate-card` - accepts an image and birthday details, then returns generated card metadata
-- `GET /api/generated-cards/{filename}` - serves generated card images for preview
+Frontend URL: usually `http://localhost:5173`
+
+## Using Groq Llama 3.3
+
+1. Add your Groq key to `backend/.env`.
+2. Keep `GROQ_MODEL=llama-3.3-70b-versatile` or replace it with another compatible Groq model.
+3. Restart the FastAPI server.
+
+The backend asks Groq for valid JSON only. If the API call fails or returns invalid JSON, WishGen AI falls back to local rule-based text generation.
+
+## Current Limitations
+
+- The frontend uses simple Konva shapes/text/emoji fallbacks for birthday objects.
+- The Pillow compatibility card is simple compared with the interactive frontend canvas.
+- The first `rembg` run may download the U2Net model and take longer.
+- Advanced face detection and template asset packs are not included yet.
 
 ## Future Improvements
 
-- Add background removal with `rembg`
-- Add face detection and emotion detection with DeepFace or MediaPipe
-- Recommend themes based on image analysis and birthday details
-- Replace rule-based messages with an LLM-powered message generator
-- Add user accounts and saved card history
-- Add downloadable card templates and social sharing options
+- Replace object fallbacks with custom designed transparent assets.
+- Add more card layouts per theme.
+- Add face-aware portrait placement.
+- Add saved card history and sharing.
+- Add deployment instructions for production hosting.
 
 ## Author
 
-Created by the WishGen AI project author.
+Created as an individual AI undergraduate project.

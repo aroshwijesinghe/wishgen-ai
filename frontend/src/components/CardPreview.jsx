@@ -33,7 +33,10 @@ export default function CardPreview({ generatedCard, imagePreview, formData, isG
       {generatedCard ? (
         <div className="result-details">
           <p>{generatedCard.message}</p>
-          <span>Theme: {generatedCard.theme}</span>
+          <span>Theme: {generatedCard.selectedTheme}</span>
+          <a className="download-button" href={generatedCard.cardUrl} download>
+            Download card
+          </a>
         </div>
       ) : null}
     </aside>
