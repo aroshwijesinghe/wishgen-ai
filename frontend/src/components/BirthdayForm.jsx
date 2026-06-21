@@ -1,3 +1,5 @@
+import CustomSelect from "./CustomSelect.jsx";
+
 const relationships = ["Friend", "Brother", "Sister", "Mother", "Father", "Teacher", "Partner", "Classmate", "Other"];
 
 export default function BirthdayForm({ formData, onChange, onGenerate, isLoading }) {
@@ -25,13 +27,11 @@ export default function BirthdayForm({ formData, onChange, onGenerate, isLoading
 
         <label className="field">
           <span>Relationship</span>
-          <select value={formData.relationship} onChange={(event) => onChange("relationship", event.target.value)}>
-            {relationships.map((relationship) => (
-              <option key={relationship} value={relationship.toLowerCase()}>
-                {relationship}
-              </option>
-            ))}
-          </select>
+          <CustomSelect 
+            value={formData.relationship} 
+            onChange={(val) => onChange("relationship", val)}
+            options={relationships.map(r => ({ value: r.toLowerCase(), label: r }))}
+          />
         </label>
 
         <label className="field">

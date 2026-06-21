@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CustomSelect from "./CustomSelect.jsx";
 
 const fonts = [
   "Playfair Display", "Lora", "Merriweather", // Serif
@@ -71,12 +72,11 @@ export default function PropertiesPanel({
           
           <label className="field full-width">
             <span>Aspect Ratio</span>
-            <select
+            <CustomSelect
               value={designSettings.cardAspectRatio || "4:5"}
-              onChange={(e) => onChangeDesign("cardAspectRatio", e.target.value)}
-            >
-              {aspectRatios.map(ar => <option key={ar.id} value={ar.id}>{ar.label}</option>)}
-            </select>
+              onChange={(val) => onChangeDesign("cardAspectRatio", val)}
+              options={aspectRatios.map(ar => ({ value: ar.id, label: ar.label }))}
+            />
           </label>
 
           <label className="field color-field full-width">
@@ -88,17 +88,16 @@ export default function PropertiesPanel({
             />
           </label>
           
-          <hr style={{ border: "0", borderTop: "1px solid #e5edf5", margin: "10px 0" }} />
+          <hr style={{ border: "0", borderTop: "1px solid var(--panel-border)", margin: "14px 0" }} />
           <span className="field-label">Main Card Border</span>
           
           <label className="field full-width">
             <span>Border Style</span>
-            <select
+            <CustomSelect
               value={designSettings.cardBorderStyle || "solid"}
-              onChange={(e) => onChangeDesign("cardBorderStyle", e.target.value)}
-            >
-              {borderStyles.map(bs => <option key={bs.id} value={bs.id}>{bs.label}</option>)}
-            </select>
+              onChange={(val) => onChangeDesign("cardBorderStyle", val)}
+              options={borderStyles.map(bs => ({ value: bs.id, label: bs.label }))}
+            />
           </label>
 
           <label className="field color-field full-width">
@@ -164,7 +163,7 @@ export default function PropertiesPanel({
                 value={designSettings[`${selectedId}Text`] !== undefined ? designSettings[`${selectedId}Text`] : ""}
                 placeholder="Type here to override the generated text..."
                 onChange={(e) => onChangeDesign(`${selectedId}Text`, e.target.value)}
-                style={{ resize: "vertical", width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db" }}
+                style={{ resize: "vertical" }}
               />
             </label>
             <label className="field full-width">
@@ -172,7 +171,7 @@ export default function PropertiesPanel({
               <div style={{ position: "relative" }}>
                 <div 
                   onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
-                  style={{ padding: "8px", border: "1px solid #d1d5db", borderRadius: "4px", cursor: "pointer", background: "#fff", display: "flex", justifyContent: "space-between" }}
+                  style={{ padding: "10px 14px", border: "1px solid var(--input-border)", borderRadius: "8px", cursor: "pointer", background: "var(--input-bg)", display: "flex", justifyContent: "space-between", backdropFilter: "blur(8px)" }}
                 >
                   <span style={{ fontFamily: designSettings[`${selectedId}FontFamily`] || "Arial" }}>
                     {designSettings[`${selectedId}FontFamily`] || "Arial"}
@@ -180,11 +179,12 @@ export default function PropertiesPanel({
                   <span>▼</span>
                 </div>
                 {isFontDropdownOpen && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: "4px", maxHeight: "250px", overflowY: "auto", zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+                  <div className="font-dropdown-menu">
                     {fonts.map((font) => (
                       <div 
                         key={font} 
-                        style={{ padding: "10px", fontFamily: font, cursor: "pointer", borderBottom: "1px solid #f3f4f6", fontSize: "16px" }}
+                        className="font-dropdown-item"
+                        style={{ fontFamily: font }}
                         onMouseEnter={() => onChangeDesign(`${selectedId}FontFamily`, font)}
                         onClick={() => {
                           onChangeDesign(`${selectedId}FontFamily`, font);
@@ -218,14 +218,15 @@ export default function PropertiesPanel({
             </label>
             <label className="field full-width">
               <span>Alignment</span>
-              <select
+              <CustomSelect
                 value={designSettings[`${selectedId}Align`] || "center"}
-                onChange={(e) => onChangeDesign(`${selectedId}Align`, e.target.value)}
-              >
-                <option value="left">Left</option>
-                <option value="center">Center</option>
-                <option value="right">Right</option>
-              </select>
+                onChange={(val) => onChangeDesign(`${selectedId}Align`, val)}
+                options={[
+                  { value: "left", label: "Left" },
+                  { value: "center", label: "Center" },
+                  { value: "right", label: "Right" }
+                ]}
+              />
             </label>
             <label className="field full-width">
               <span>Opacity</span>
@@ -235,7 +236,7 @@ export default function PropertiesPanel({
                 onChange={(e) => onChangeDesign(`${selectedId}Opacity`, Number(e.target.value))}
               />
             </label>
-            <hr style={{ border: "0", borderTop: "1px solid #e5edf5", margin: "10px 0" }} />
+            <hr style={{ border: "0", borderTop: "1px solid var(--panel-border)", margin: "14px 0" }} />
             <span className="field-label">Text Shadow</span>
             <label className="field color-field full-width">
               <span>Shadow Color</span>
@@ -272,12 +273,11 @@ export default function PropertiesPanel({
             <>
               <label className="field full-width">
                 <span>Shape</span>
-                <select
+                <CustomSelect
                   value={blob.shape || "circle"}
-                  onChange={(e) => onChangeColorPoint(selectedId, { shape: e.target.value })}
-                >
-                  {shapes.filter(s => s.id !== "custom").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                </select>
+                  onChange={(val) => onChangeColorPoint(selectedId, { shape: val })}
+                  options={shapes.filter(s => s.id !== "custom").map(s => ({ value: s.id, label: s.label }))}
+                />
               </label>
               <label className="field color-field full-width">
                 <span>Blob Color</span>
@@ -343,7 +343,7 @@ export default function PropertiesPanel({
 
         {/* EMOJI EDITOR */}
         {isEmoji && (
-          <p style={{ color: "#627d98", fontSize: "0.9rem" }}>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
             Use the corner handles on the canvas to resize and rotate this sticker.
           </p>
         )}
@@ -353,16 +353,11 @@ export default function PropertiesPanel({
           <>
             <label className="field full-width">
               <span>Photo Frame Shape</span>
-              <select
+              <CustomSelect
                 value={designSettings.frameShape || "circle"}
-                onChange={(e) => onChangeDesign("frameShape", e.target.value)}
-              >
-                {shapes.map((shape) => (
-                  <option key={shape.id} value={shape.id}>
-                    {shape.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => onChangeDesign("frameShape", val)}
+                options={shapes.map(shape => ({ value: shape.id, label: shape.label }))}
+              />
             </label>
             
             {designSettings.frameShape === "custom" && (
@@ -388,16 +383,11 @@ export default function PropertiesPanel({
             
             <label className="field full-width">
               <span>Frame Border Style</span>
-              <select
+              <CustomSelect
                 value={designSettings.frameStyle || "classic"}
-                onChange={(e) => onChangeDesign("frameStyle", e.target.value)}
-              >
-                {frameStyles.map((style) => (
-                  <option key={style.id} value={style.id}>
-                    {style.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => onChangeDesign("frameStyle", val)}
+                options={frameStyles.map(style => ({ value: style.id, label: style.label }))}
+              />
             </label>
 
             <label className="field">
@@ -437,7 +427,7 @@ export default function PropertiesPanel({
           </div>
           {/* We do not allow deleting the core text nodes or the frame */}
           {!isTextNode && !isFrame && (
-            <button type="button" className="secondary-button" style={{ color: "#b42318", marginTop: "8px" }} onClick={onDeleteSelected}>
+            <button type="button" className="secondary-button" style={{ color: "#ef4444", marginTop: "8px" }} onClick={onDeleteSelected}>
               Delete Selected
             </button>
           )}
