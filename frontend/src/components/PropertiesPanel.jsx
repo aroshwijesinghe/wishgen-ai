@@ -1,10 +1,11 @@
 import React from "react";
 
 const fonts = [
-  "Arial", "Georgia", "Times New Roman", "Verdana", "Courier New", "cursive", "fantasy", "monospace",
-  "Roboto", "Open Sans", "Lato", "Montserrat", "Oswald", "Raleway", "PT Sans", "Merriweather", 
-  "Nunito", "Playfair Display", "Rubik", "Work Sans", "Lora", "Quicksand", "Fira Sans", "Inter", 
-  "Karla", "Inconsolata", "Josefin Sans", "Anton", "Dancing Script", "Pacifico", "Caveat", "Satisfy"
+  "Playfair Display", "Lora", "Merriweather", // Serif
+  "Montserrat", "Inter", "Poppins", "Outfit", "Roboto", // Sans-Serif
+  "Great Vibes", "Pacifico", "Dancing Script", "Brush Script MT", "Caveat", // Handwriting/Script
+  "Lobster", "Righteous", "Bebas Neue", "Shadows Into Light", "Amatic SC", // Display/Creative
+  "Courier New", "Consolas" // Monospace
 ];
 
 const shapes = [
@@ -256,17 +257,56 @@ export default function PropertiesPanel({
                   onChange={(e) => onChangeColorPoint(selectedId, { color: e.target.value })}
                 />
               </label>
-              <label className="field full-width">
-                <span>Size / Radius</span>
-                <input
-                  type="range"
-                  min="50"
-                  max="1000"
-                  value={blob.radius}
-                  onChange={(e) => onChangeColorPoint(selectedId, { radius: Number(e.target.value) })}
-                />
-                <small>{blob.radius}px</small>
-              </label>
+              {blob.shape !== "line" && (
+                <label className="field full-width">
+                  <span>Size / Radius</span>
+                  <input
+                    type="range"
+                    min="50"
+                    max="1000"
+                    value={blob.radius}
+                    onChange={(e) => onChangeColorPoint(selectedId, { radius: Number(e.target.value) })}
+                  />
+                  <small>{blob.radius}px</small>
+                </label>
+              )}
+              {blob.shape === "line" && (
+                <>
+                  <label className="field full-width">
+                    <span>Line Length</span>
+                    <input
+                      type="range"
+                      min="50"
+                      max="2000"
+                      value={blob.length !== undefined ? blob.length : blob.radius * 2}
+                      onChange={(e) => onChangeColorPoint(selectedId, { length: Number(e.target.value) })}
+                    />
+                    <small>{blob.length !== undefined ? blob.length : blob.radius * 2}px</small>
+                  </label>
+                  <label className="field full-width">
+                    <span>Line Thickness</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="200"
+                      value={blob.thickness !== undefined ? blob.thickness : blob.radius / 4}
+                      onChange={(e) => onChangeColorPoint(selectedId, { thickness: Number(e.target.value) })}
+                    />
+                    <small>{blob.thickness !== undefined ? blob.thickness : blob.radius / 4}px</small>
+                  </label>
+                  <label className="field full-width">
+                    <span>Dash Spacing (0 for solid)</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={blob.dash || 0}
+                      onChange={(e) => onChangeColorPoint(selectedId, { dash: Number(e.target.value) })}
+                    />
+                    <small>{blob.dash || 0}px</small>
+                  </label>
+                </>
+              )}
             </>
           );
         })()}

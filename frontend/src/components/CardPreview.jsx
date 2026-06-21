@@ -4,6 +4,7 @@ import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Star, Tex
 const CardPreview = forwardRef(function CardPreview({ 
   template, imageUrl, photoTransform, wishData, formData, designSettings, 
   elementPositions, onElementDrag, colorPoints = [], onColorPointChange, scale = 0.72,
+  emojis = [], selectedId, onSelectId, onChangeEmoji, customShapePath = null
 }, stageRef) {
   const image = useCanvasImage(imageUrl);
 

@@ -55,6 +55,33 @@ export default function App() {
   
   const [isDrawShapeModalOpen, setIsDrawShapeModalOpen] = useState(false);
   const [customShapePath, setCustomShapePath] = useState(null);
+  
+  const [zoomScale, setZoomScale] = useState(0.5); // Default start scale
+  const wrapRef = useRef(null);
+
+  const getCardDimensions = () => {
+    const ar = designSettings.cardAspectRatio || "4:5";
+    if (ar === "16:9") return { w: 1920, h: 1080 };
+    if (ar === "9:16") return { w: 1080, h: 1920 };
+    if (ar === "4:3") return { w: 1440, h: 1080 };
+    if (ar === "3:4") return { w: 1080, h: 1440 };
+    if (ar === "1:1") return { w: 1080, h: 1080 };
+    return { w: 1080, h: 1350 };
+  };
+
+  const handleFitZoom = () => {
+    if (!wrapRef.current) return;
+    const wrap = wrapRef.current;
+    const { w, h } = getCardDimensions();
+    // Add some padding
+    const scaleX = (wrap.clientWidth - 40) / w;
+    const scaleY = (wrap.clientHeight - 40) / h;
+    setZoomScale(Math.min(scaleX, scaleY, 1.5)); // cap at 1.5
+  };
+
+  useEffect(() => {
+    handleFitZoom();
+  }, [designSettings.cardAspectRatio]);
 
   useEffect(() => {
     // Seed design settings from the selected template (only if not already set, or you can allow full override)
@@ -299,7 +326,13 @@ export default function App() {
           {error ? <p className="error-message">{error}</p> : null}
 
           <div className="photo-actions">
-            <button type="button" className="secondary-button" onClick={openPhotoModal}>
+            <button 
+              type="button" 
+              className="secondary-button" 
+              onClick={openPhotoModal}
+              disabled={designSettings.frameShape === "custom"}
+              title={designSettings.frameShape === "custom" ? "Not available for custom drawn shapes" : ""}
+            >
               Edit Photo Inside Frame
             </button>
             <span>{isPhotoConfirmed ? "Photo confirmed" : "Photo not confirmed yet"}</span>
@@ -309,14 +342,22 @@ export default function App() {
         </aside>
 
         <section className="preview-panel">
-          <div className="preview-heading">
-            <p className="eyebrow">Final Preview</p>
-            <h2>{template.name}</h2>
-            <small>Drag any text or the photo frame to reposition it.</small>
+          <div className="preview-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div>
+              <p className="eyebrow">Final Preview</p>
+              <h2>{template.name}</h2>
+              <small>Drag any text or the photo frame to reposition it.</small>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button className="secondary-button" onClick={() => setZoomScale(z => Math.max(0.1, z - 0.1))}>Zoom Out</button>
+              <button className="secondary-button" onClick={handleFitZoom}>Fit</button>
+              <button className="secondary-button" onClick={() => setZoomScale(z => Math.min(3, z + 0.1))}>Zoom In</button>
+            </div>
           </div>
-          <div className="canvas-wrap">
+          <div className="canvas-wrap" ref={wrapRef} style={{ overflow: "auto", display: "flex", justifyContent: "center", alignItems: "center" }}>
             <CardPreview 
               ref={stageRef} 
+              scale={zoomScale}
               template={template} 
               imageUrl={imagePreview} 
               photoTransform={photoTransform} 
