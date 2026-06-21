@@ -467,10 +467,6 @@ export default function App() {
           onSendBackward={sendBackward}
           onDeleteSelected={handleDeleteSelected}
           onOpenDrawModal={() => {
-            if (!imagePreview) {
-              setError("Please upload an image first to draw a shape over it.");
-              return;
-            }
             setIsDrawShapeModalOpen(true);
           }}
         />

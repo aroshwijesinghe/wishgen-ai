@@ -52,7 +52,6 @@ const CardPreview = forwardRef(function CardPreview({
             onChange={(newProps) => onColorPointChange?.(blob.id, newProps)}
           />
         ))}
-        <Decorations template={dynTemplate} />
         <CircularPhoto 
           template={dynTemplate} 
           image={image} 

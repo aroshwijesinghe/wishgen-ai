@@ -167,6 +167,16 @@ button {
   padding: 24px;
 }
 
+.preview-panel {
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 120px);
+}
+
+.properties-panel {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
 .title-block, .preview-heading {
   display: grid;
   gap: 6px;
@@ -395,7 +405,9 @@ input:focus, select:focus, textarea:focus {
 
 .secondary-button:hover:not(:disabled) {
   background: var(--hover-overlay);
-  border-color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px) scale(1.02);
+  filter: brightness(1.2);
 }
 
 .secondary-button.active {
@@ -523,6 +535,7 @@ input:focus, select:focus, textarea:focus {
 
 .splash-title {
   display: flex;
+  justify-content: center;
   color: #fff;
   font-size: 3rem;
   font-weight: 800;
@@ -642,13 +655,13 @@ input:focus, select:focus, textarea:focus {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--input-bg);
+  background: rgba(15, 23, 42, 0.98);
   backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
-  max-height: 250px;
+  max-height: 200px;
   overflow-y: auto;
-  z-index: 60;
+  z-index: 50;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   margin-top: 4px;
 }
