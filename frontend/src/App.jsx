@@ -58,6 +58,9 @@ export default function App() {
   
   const [zoomScale, setZoomScale] = useState(0.5); // Default start scale
   const wrapRef = useRef(null);
+  const [isPanMode, setIsPanMode] = useState(false);
+  const [isDraggingWrap, setIsDraggingWrap] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
 
   const getCardDimensions = () => {
     const ar = designSettings.cardAspectRatio || "4:5";
@@ -359,28 +362,75 @@ export default function App() {
               <button className="secondary-button" onClick={() => setZoomScale(z => Math.max(0.1, z - 0.1))}>Zoom Out</button>
               <button className="secondary-button" onClick={handleFitZoom}>Fit</button>
               <button className="secondary-button" onClick={() => setZoomScale(z => Math.min(3, z + 0.1))}>Zoom In</button>
+              <button className={`secondary-button ${isPanMode ? 'active' : ''}`} onClick={() => setIsPanMode(!isPanMode)} style={{ background: isPanMode ? '#3b82f6' : '', color: isPanMode ? '#fff' : '' }}>
+                {isPanMode ? 'Stop Panning' : 'Pan Mode'}
+              </button>
             </div>
           </div>
-          <div className="canvas-wrap" ref={wrapRef} style={{ overflow: "auto", display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <CardPreview 
-              ref={stageRef} 
-              scale={zoomScale}
-              template={template} 
-              imageUrl={imagePreview} 
-              photoTransform={photoTransform} 
-              wishData={wishData} 
-              formData={formData} 
-              designSettings={designSettings} 
-              elementPositions={elementPositions}
-              onElementDrag={handleElementDrag}
-              colorPoints={colorPoints}
-              onColorPointChange={handleColorPointChange}
-              emojis={emojis}
-              selectedId={selectedId}
-              onSelectId={setSelectedId}
-              onChangeEmoji={handleEmojiChange}
-              customShapePath={customShapePath}
-            />
+          <div 
+            className="canvas-wrap" 
+            ref={wrapRef} 
+            style={{ 
+              overflow: "auto", 
+              cursor: isPanMode ? (isDraggingWrap ? "grabbing" : "grab") : "default" 
+            }}
+            onMouseDownCapture={(e) => {
+              if (!isPanMode) return;
+              e.stopPropagation();
+              e.preventDefault();
+              setIsDraggingWrap(true);
+              dragStart.current = {
+                x: e.clientX,
+                y: e.clientY,
+                scrollLeft: wrapRef.current.scrollLeft,
+                scrollTop: wrapRef.current.scrollTop
+              };
+            }}
+            onMouseMoveCapture={(e) => {
+              if (!isPanMode) return;
+              e.stopPropagation();
+              e.preventDefault();
+              if (!isDraggingWrap) return;
+              const dx = e.clientX - dragStart.current.x;
+              const dy = e.clientY - dragStart.current.y;
+              if (wrapRef.current) {
+                wrapRef.current.scrollLeft = dragStart.current.scrollLeft - dx;
+                wrapRef.current.scrollTop = dragStart.current.scrollTop - dy;
+              }
+            }}
+            onMouseUpCapture={(e) => {
+              if (!isPanMode) return;
+              e.stopPropagation();
+              e.preventDefault();
+              setIsDraggingWrap(false);
+            }}
+            onMouseLeave={() => {
+              if (isPanMode) setIsDraggingWrap(false);
+            }}
+          >
+            <div style={{ minWidth: "100%", minHeight: "100%", display: "flex", padding: "100px", boxSizing: "border-box" }}>
+              <div style={{ margin: "auto", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}>
+                <CardPreview 
+                  ref={stageRef} 
+                  scale={zoomScale}
+                  template={template} 
+                  imageUrl={imagePreview} 
+                  photoTransform={photoTransform} 
+                  wishData={wishData} 
+                  formData={formData} 
+                  designSettings={designSettings} 
+                  elementPositions={elementPositions}
+                  onElementDrag={handleElementDrag}
+                  colorPoints={colorPoints}
+                  onColorPointChange={handleColorPointChange}
+                  emojis={emojis}
+                  selectedId={selectedId}
+                  onSelectId={setSelectedId}
+                  onChangeEmoji={handleEmojiChange}
+                  customShapePath={customShapePath}
+                />
+              </div>
+            </div>
           </div>
         </section>
 
