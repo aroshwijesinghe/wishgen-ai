@@ -32,15 +32,16 @@ button {
 
 .designer-workspace {
   display: grid;
-  grid-template-columns: minmax(340px, 440px) minmax(420px, 1fr);
+  grid-template-columns: minmax(300px, 380px) minmax(420px, 1fr) minmax(280px, 340px);
   gap: 22px;
-  max-width: 1420px;
+  max-width: 1680px;
   margin: 0 auto;
   align-items: start;
 }
 
 .control-panel,
-.preview-panel {
+.preview-panel,
+.properties-panel {
   background: #ffffff;
   border: 1px solid #d9e3ec;
   border-radius: 8px;
@@ -53,7 +54,8 @@ button {
   padding: 22px;
 }
 
-.preview-panel {
+.preview-panel,
+.properties-panel {
   position: sticky;
   top: 20px;
   display: grid;

@@ -5,7 +5,8 @@ import CardPreview from "./components/CardPreview.jsx";
 import DownloadOptions from "./components/DownloadOptions.jsx";
 import ImageUpload from "./components/ImageUpload.jsx";
 import PhotoAdjustModal from "./components/PhotoAdjustModal.jsx";
-import TemplateSelector from "./components/TemplateSelector.jsx";
+import DrawShapeModal from "./components/DrawShapeModal.jsx";
+import PropertiesPanel from "./components/PropertiesPanel.jsx";
 import { templates } from "./data/templates.js";
 import { generateWish, analyzeImage } from "./services/api.js";
 
@@ -18,14 +19,15 @@ const initialForm = {
   relationship: "friend",
   personality: "",
   interestingThing: "",
-  senderName: "",
-  template: "modern_dark"
+  senderName: ""
 };
 
 const TEMPLATE_BY_ID = templates.reduce((acc, t) => {
   acc[t.id] = t;
   return acc;
 }, {});
+
+const defaultTemplate = TEMPLATE_BY_ID.modern_dark;
 
 const initialPhotoTransform = { x: 0, y: 0, scale: 1 };
 
@@ -43,13 +45,16 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
   
-  const template = TEMPLATE_BY_ID[formData.template] || TEMPLATE_BY_ID.modern_dark;
+  const template = defaultTemplate;
 
-  const [designSettings, setDesignSettings] = useState({});
+  const [designSettings, setDesignSettings] = useState({ cardAspectRatio: "4:5" });
   const [elementPositions, setElementPositions] = useState({});
-  const [glowPoint, setGlowPoint] = useState(null); // {x, y}
+  const [colorPoints, setColorPoints] = useState([]);
   const [emojis, setEmojis] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  
+  const [isDrawShapeModalOpen, setIsDrawShapeModalOpen] = useState(false);
+  const [customShapePath, setCustomShapePath] = useState(null);
 
   useEffect(() => {
     // Seed design settings from the selected template (only if not already set, or you can allow full override)
@@ -57,8 +62,8 @@ export default function App() {
     setDesignSettings(current => ({
       frameShape: current.frameShape || "circle",
       frameStyle: current.frameStyle || "classic",
+      cardAspectRatio: current.cardAspectRatio || "4:5",
       cardBackgroundColor: current.cardBackgroundColor || template.colors.background,
-      glowColor: current.glowColor || "transparent",
       circleBorderColor: current.circleBorderColor || template.imageFrame.borderColor,
       circleBorderWidth: current.circleBorderWidth !== undefined ? current.circleBorderWidth : template.imageFrame.borderWidth,
       circleRadius: current.circleRadius || template.imageFrame.radius,
@@ -80,7 +85,7 @@ export default function App() {
       signature: current.signature || { x: template.width * 0.1, y: template.positions.signature.y },
       frame: current.frame || { x: template.imageFrame.x, y: template.imageFrame.y },
     }));
-  }, [formData.template, template]);
+  }, []);
 
   const handleFormChange = (field, value) => {
     if (field === "age") {
@@ -115,9 +120,7 @@ export default function App() {
         }));
       }
     } catch (requestError) {
-      // Don't fail the whole app if vision analysis fails, just show a temporary error or ignore
       console.error(requestError);
-      // setError("Could not fetch AI design recommendations. You can still design manually.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -178,6 +181,22 @@ export default function App() {
   };
 
   const handleDesignChange = (field, value) => {
+    if (field === "addColorPoint") {
+      const newPoint = {
+        id: "color-" + Date.now(),
+        type: "colorPoint",
+        x: template.width / 2,
+        y: template.height / 2,
+        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+        radius: 300,
+      };
+      setColorPoints([...colorPoints, newPoint]);
+      setSelectedId(newPoint.id);
+      return;
+    }
+    
+    // If a color point is selected and the user changes color in the UI, we could apply it, 
+    // but the UI currently doesn't have a color point color picker. We'll add it in CardPreview or rely on random.
     setDesignSettings((current) => ({ ...current, [field]: value }));
   };
 
@@ -187,7 +206,8 @@ export default function App() {
 
   const handleAddEmoji = (emojiChar) => {
     const newEmoji = {
-      id: Date.now().toString(),
+      id: "emoji-" + Date.now().toString(),
+      type: "emoji",
       char: emojiChar,
       x: template.width / 2,
       y: template.height / 2,
@@ -204,25 +224,45 @@ export default function App() {
       current.map((emoji) => (emoji.id === id ? { ...emoji, ...newProps } : emoji))
     );
   };
+  
+  const handleColorPointChange = (id, newProps) => {
+    setColorPoints((current) => 
+      current.map((pt) => (pt.id === id ? { ...pt, ...newProps } : pt))
+    );
+  };
 
   const bringForward = () => {
     if (!selectedId) return;
-    const index = emojis.findIndex((e) => e.id === selectedId);
-    if (index === -1 || index === emojis.length - 1) return;
-    const newEmojis = [...emojis];
-    const [item] = newEmojis.splice(index, 1);
-    newEmojis.splice(index + 1, 0, item);
-    setEmojis(newEmojis);
+    if (selectedId.startsWith("emoji-")) {
+      const index = emojis.findIndex((e) => e.id === selectedId);
+      if (index === -1 || index === emojis.length - 1) return;
+      const newEmojis = [...emojis];
+      const [item] = newEmojis.splice(index, 1);
+      newEmojis.splice(index + 1, 0, item);
+      setEmojis(newEmojis);
+    }
   };
 
   const sendBackward = () => {
     if (!selectedId) return;
-    const index = emojis.findIndex((e) => e.id === selectedId);
-    if (index <= 0) return;
-    const newEmojis = [...emojis];
-    const [item] = newEmojis.splice(index, 1);
-    newEmojis.splice(index - 1, 0, item);
-    setEmojis(newEmojis);
+    if (selectedId.startsWith("emoji-")) {
+      const index = emojis.findIndex((e) => e.id === selectedId);
+      if (index <= 0) return;
+      const newEmojis = [...emojis];
+      const [item] = newEmojis.splice(index, 1);
+      newEmojis.splice(index - 1, 0, item);
+      setEmojis(newEmojis);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (!selectedId) return;
+    if (selectedId.startsWith("emoji-")) {
+      setEmojis(emojis.filter(e => e.id !== selectedId));
+    } else if (selectedId.startsWith("color-")) {
+      setColorPoints(colorPoints.filter(p => p.id !== selectedId));
+    }
+    setSelectedId(null);
   };
 
   const canDownload = Boolean(wishData && imagePreview && isPhotoConfirmed);
@@ -239,7 +279,6 @@ export default function App() {
           <BirthdayForm formData={formData} onChange={handleFormChange} onGenerate={handleGenerateWish} isLoading={isGenerating} />
           <ImageUpload imagePreview={imagePreview} onImageChange={handleImageChange} />
           {isAnalyzing && <p style={{ color: "#0f766e", fontWeight: "bold" }}>✨ AI is analyzing image for design recommendations...</p>}
-          <TemplateSelector selectedTemplate={formData.template} onSelect={(templateId) => handleFormChange("template", templateId)} />
           <DesignToolbar 
             designSettings={designSettings} 
             onChange={handleDesignChange} 
@@ -247,11 +286,13 @@ export default function App() {
             hasSelection={!!selectedId}
             onBringForward={bringForward}
             onSendBackward={sendBackward}
-            onDeleteSelected={() => {
-              if (selectedId) {
-                setEmojis(emojis.filter(e => e.id !== selectedId));
-                setSelectedId(null);
+            onDeleteSelected={handleDeleteSelected}
+            onOpenDrawModal={() => {
+              if (!imagePreview) {
+                setError("Please upload an image first to draw a shape over it.");
+                return;
               }
+              setIsDrawShapeModalOpen(true);
             }}
           />
 
@@ -284,15 +325,27 @@ export default function App() {
               designSettings={designSettings} 
               elementPositions={elementPositions}
               onElementDrag={handleElementDrag}
-              glowPoint={glowPoint}
-              onSetGlowPoint={setGlowPoint}
+              colorPoints={colorPoints}
+              onColorPointChange={handleColorPointChange}
               emojis={emojis}
               selectedId={selectedId}
               onSelectId={setSelectedId}
               onChangeEmoji={handleEmojiChange}
+              customShapePath={customShapePath}
             />
           </div>
         </section>
+
+        <PropertiesPanel
+          selectedId={selectedId}
+          designSettings={designSettings}
+          onChangeDesign={handleDesignChange}
+          colorPoints={colorPoints}
+          onChangeColorPoint={handleColorPointChange}
+          onBringForward={bringForward}
+          onSendBackward={sendBackward}
+          onDeleteSelected={handleDeleteSelected}
+        />
       </section>
 
       <PhotoAdjustModal
@@ -304,6 +357,20 @@ export default function App() {
         onChange={setDraftPhotoTransform}
         onConfirm={confirmPhoto}
         onCancel={() => setIsPhotoModalOpen(false)}
+      />
+
+      <DrawShapeModal
+        isOpen={isDrawShapeModalOpen}
+        imageUrl={imagePreview}
+        onSave={(path) => {
+          setCustomShapePath(path);
+          setDesignSettings(current => ({ ...current, frameShape: "custom" }));
+          setIsDrawShapeModalOpen(false);
+        }}
+        onCancel={() => {
+          setIsDrawShapeModalOpen(false);
+          if (!customShapePath) setDesignSettings(current => ({ ...current, frameShape: "circle" }));
+        }}
       />
     </main>
   );

@@ -13,6 +13,10 @@ export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform
     onChange({ ...transform, scale: Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number((transform.scale + amount).toFixed(2)))) });
   };
 
+  const move = (dx, dy) => {
+    onChange({ ...transform, x: transform.x + dx, y: transform.y + dy });
+  };
+
   const reset = () => onChange({ x: 0, y: 0, scale: 1 });
 
   return (
@@ -46,18 +50,26 @@ export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform
         </div>
 
         <div className="modal-controls">
-          <button type="button" className="secondary-button" onClick={() => updateScale(0.1)}>
-            Zoom In
-          </button>
-          <button type="button" className="secondary-button" onClick={() => updateScale(-0.1)}>
-            Zoom Out
-          </button>
-          <button type="button" className="secondary-button" onClick={reset}>
-            Reset
-          </button>
-          <button type="button" className="primary-button" onClick={onConfirm}>
-            Confirm Photo
-          </button>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", marginBottom: "8px" }}>
+            <button type="button" className="secondary-button" onClick={() => move(0, -10)}>Up</button>
+            <button type="button" className="secondary-button" onClick={() => move(0, 10)}>Down</button>
+            <button type="button" className="secondary-button" onClick={() => move(-10, 0)}>Left</button>
+            <button type="button" className="secondary-button" onClick={() => move(10, 0)}>Right</button>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            <button type="button" className="secondary-button" onClick={() => updateScale(0.1)}>
+              Zoom In
+            </button>
+            <button type="button" className="secondary-button" onClick={() => updateScale(-0.1)}>
+              Zoom Out
+            </button>
+            <button type="button" className="secondary-button" onClick={reset}>
+              Reset
+            </button>
+            <button type="button" className="primary-button" onClick={onConfirm}>
+              Confirm Photo
+            </button>
+          </div>
         </div>
       </section>
     </div>
