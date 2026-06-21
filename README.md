@@ -4,11 +4,13 @@ WishGen AI is a customizable birthday card editor powered by AI.
 
 ## Features
 
-- **5 Unique Templates**: Choose from Modern Dark, Floral Elegance, Cute Pastel, Luxury Gold, and Fun Party.
-- **Circular Photo Frame**: Upload a photo of the birthday person and manually adjust it (drag and zoom) to perfectly fit inside the template's circular frame.
-- **Customizable Design**: Adjust card background color, circle border size, radius, border color, and all typography (font family, size, color).
-- **AI-Generated Wishes**: Enter some details about the birthday person, and the Groq LLM will generate a warm, personalized birthday wish.
-- **High-Quality Export**: Download the final, personalized birthday card as PNG, JPEG, or PDF.
+- **Intelligent Templates**: Start with beautiful templates like Modern Dark, Floral Elegance, or Luxury Gold.
+- **Custom Drawn Shapes**: Draw your own custom shape loops over photos to perfectly crop out subjects!
+- **Interactive Canvas Editor**: Pan, zoom, and fit the canvas using a seamless drag-and-drop workspace powered by React-Konva.
+- **Dynamic Styling**: Adjust border styles, inset positioning, colors, rounded corners, and custom Google Fonts on the fly.
+- **AI-Generated Wishes**: Provide a few details about the birthday person and let the Groq LLM generate a heartfelt, personalized message instantly.
+- **High-Quality Export**: Download your final masterpiece as a PNG, JPEG, or PDF.
+- **Premium Aesthetics**: Enjoy a modern, sleek interface with micro-animations, glassmorphism, and a beautiful creative loading screen.
 
 ## Tech Stack
 
