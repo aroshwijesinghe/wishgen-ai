@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+// When deployed on Vercel, the API is available at /api via rewrite. 
+// Locally, we fallback to the FastAPI port if not specified via env variable.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:8000");
 
 export async function generateWish(formData) {
   let response;
