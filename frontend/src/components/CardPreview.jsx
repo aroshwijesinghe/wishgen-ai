@@ -52,7 +52,6 @@ const CardPreview = forwardRef(function CardPreview({
             onChange={(newProps) => onColorPointChange?.(blob.id, newProps)}
           />
         ))}
-        <Decorations template={dynTemplate} />
         <CircularPhoto 
           template={dynTemplate} 
           image={image} 
@@ -339,6 +338,13 @@ export function CircularPhoto({ template, image, transform, designSettings, drag
       ctx.bezierCurveTo(posX - size, posY + size * 0.3, posX, posY + size * 0.7, posX, posY + size);
       ctx.bezierCurveTo(posX, posY + size * 0.7, posX + size, posY + size * 0.3, posX + size, posY - size * 0.3);
       ctx.bezierCurveTo(posX + size, posY - size * 0.8, posX, posY - size * 0.8, posX, posY - size * 0.3);
+    } else if (shape === "polygon") {
+      const sides = 6;
+      const r = circleRadius;
+      ctx.moveTo(posX + r * Math.cos(0), posY + r * Math.sin(0));
+      for (let i = 1; i <= sides; i++) {
+        ctx.lineTo(posX + r * Math.cos((i * 2 * Math.PI) / sides), posY + r * Math.sin((i * 2 * Math.PI) / sides));
+      }
     } else if (shape === "cloud") {
       const r = circleRadius;
       ctx.moveTo(posX - r*0.5, posY);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import DesignToolbar from "./components/DesignToolbar.jsx";
 import BirthdayForm from "./components/BirthdayForm.jsx";
 import CardPreview from "./components/CardPreview.jsx";
@@ -9,6 +9,7 @@ import DrawShapeModal from "./components/DrawShapeModal.jsx";
 import PropertiesPanel from "./components/PropertiesPanel.jsx";
 import { templates } from "./data/templates.js";
 import { generateWish, analyzeImage } from "./services/api.js";
+import SplashScreen from "./components/SplashScreen.jsx";
 
 const MIN_AGE = 1;
 const MAX_AGE = 120;
@@ -36,7 +37,12 @@ export default function App() {
   const [formData, setFormData] = useState(initialForm);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [wishData, setWishData] = useState(null);
+  const [wishData, setWishData] = useState({
+    title: "",
+    name: "",
+    wish: "",
+    signature: ""
+  });
   const [photoTransform, setPhotoTransform] = useState(initialPhotoTransform);
   const [draftPhotoTransform, setDraftPhotoTransform] = useState(initialPhotoTransform);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -61,6 +67,7 @@ export default function App() {
   const [isPanMode, setIsPanMode] = useState(false);
   const [isDraggingWrap, setIsDraggingWrap] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const [showSplash, setShowSplash] = useState(true);
 
   const getCardDimensions = () => {
     const ar = designSettings.cardAspectRatio || "4:5";
@@ -76,11 +83,14 @@ export default function App() {
     if (!wrapRef.current) return;
     const wrap = wrapRef.current;
     const { w, h } = getCardDimensions();
-    // Add some padding
-    const scaleX = (wrap.clientWidth - 40) / w;
-    const scaleY = (wrap.clientHeight - 40) / h;
-    setZoomScale(Math.min(scaleX, scaleY, 1.5)); // cap at 1.5
+    // Accounting for 100px padding on all sides (200px total) plus buffer
+    const scaleX = (wrap.clientWidth - 240) / w;
+    const scaleY = (wrap.clientHeight - 240) / h;
+    setZoomScale(Math.min(scaleX, scaleY, 1.5));
   };
+
+  const { w: cardW, h: cardH } = getCardDimensions();
+  const dynTemplate = { ...template, width: cardW, height: cardH };
 
   useEffect(() => {
     handleFitZoom();
@@ -89,11 +99,15 @@ export default function App() {
   useEffect(() => {
     // Seed design settings from the selected template (only if not already set, or you can allow full override)
     // To make sure we don't wipe out AI recommendations when template changes, we merge.
+    // Randomize initial background color
+    const randomColors = ["#0f172a", "#1e1b4b", "#171717", "#052e16", "#3b0764", "#0f766e", "#831843"];
+    const randomBg = randomColors[Math.floor(Math.random() * randomColors.length)];
+
     setDesignSettings(current => ({
       frameShape: current.frameShape || "circle",
       frameStyle: current.frameStyle || "classic",
       cardAspectRatio: current.cardAspectRatio || "4:5",
-      cardBackgroundColor: current.cardBackgroundColor || template.colors.background,
+      cardBackgroundColor: current.cardBackgroundColor || randomBg,
       circleBorderColor: current.circleBorderColor || template.imageFrame.borderColor,
       circleBorderWidth: current.circleBorderWidth !== undefined ? current.circleBorderWidth : template.imageFrame.borderWidth,
       circleRadius: current.circleRadius || template.imageFrame.radius,
@@ -305,13 +319,23 @@ export default function App() {
   const canDownload = Boolean(wishData && imagePreview && isPhotoConfirmed);
 
   return (
-    <main className="app-shell">
-      <section className="designer-workspace">
-        <aside className="control-panel">
-          <div className="title-block">
-            <p className="eyebrow">WishGen AI</p>
-            <h1>Birthday Card Editor</h1>
-          </div>
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <div className="top-header">
+        <div className="logo-area">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="logo-icon"><path d="M12 2L2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+          <span className="logo-text">Wishgen AI</span>
+        </div>
+      </div>
+      <main className={`app-shell ${showSplash ? 'hidden-content' : ''}`}>
+        <div className="ambient-bg-glow glow-primary"></div>
+        <div className="ambient-bg-glow glow-secondary"></div>
+        
+        <section className="designer-workspace">
+          <aside className="control-panel">
+            <div className="title-block">
+              <h1>Birthday Card Editor</h1>
+            </div>
 
           <BirthdayForm formData={formData} onChange={handleFormChange} onGenerate={handleGenerateWish} isLoading={isGenerating} />
           <ImageUpload imagePreview={imagePreview} onImageChange={handleImageChange} />
@@ -355,7 +379,6 @@ export default function App() {
           <div className="preview-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
             <div>
               <p className="eyebrow">Final Preview</p>
-              <h2>{template.name}</h2>
               <small>Drag any text or the photo frame to reposition it.</small>
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
@@ -413,7 +436,7 @@ export default function App() {
                 <CardPreview 
                   ref={stageRef} 
                   scale={zoomScale}
-                  template={template} 
+                  template={dynTemplate} 
                   imageUrl={imagePreview} 
                   photoTransform={photoTransform} 
                   wishData={wishData} 
@@ -444,10 +467,6 @@ export default function App() {
           onSendBackward={sendBackward}
           onDeleteSelected={handleDeleteSelected}
           onOpenDrawModal={() => {
-            if (!imagePreview) {
-              setError("Please upload an image first to draw a shape over it.");
-              return;
-            }
             setIsDrawShapeModalOpen(true);
           }}
         />
@@ -455,7 +474,7 @@ export default function App() {
 
       <PhotoAdjustModal
         isOpen={isPhotoModalOpen}
-        template={template}
+        template={dynTemplate}
         imageUrl={imagePreview}
         transform={draftPhotoTransform}
         designSettings={designSettings}
@@ -478,5 +497,6 @@ export default function App() {
         }}
       />
     </main>
+    </>
   );
 }

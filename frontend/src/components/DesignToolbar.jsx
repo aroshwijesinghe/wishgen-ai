@@ -54,7 +54,7 @@ export default function DesignToolbar({
             key={`${emoji}-${index}`} 
             type="button" 
             onClick={() => onAddEmoji(emoji)}
-            style={{ fontSize: "1.5rem", padding: "0.25rem", background: "none", border: "1px solid #ddd", borderRadius: "4px", cursor: "pointer" }}
+            style={{ fontSize: "1.5rem", padding: "0.25rem", background: "none", border: "1px solid var(--panel-border)", borderRadius: "8px", cursor: "pointer", transition: "all 0.3s ease" }}
             title={`Add ${emoji}`}
           >
             {emoji}
@@ -64,7 +64,7 @@ export default function DesignToolbar({
       <button 
         type="button" 
         onClick={() => setIsEmojiExpanded(!isEmojiExpanded)}
-        style={{ width: "100%", padding: "0.25rem", marginBottom: "1rem", background: "#f3f4f6", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.875rem" }}
+        style={{ width: "100%", padding: "8px", marginBottom: "1rem", background: "var(--input-bg)", color: "var(--text-main)", border: "1px solid var(--panel-border)", borderRadius: "8px", cursor: "pointer", fontSize: "0.875rem", transition: "all 0.3s ease" }}
       >
         {isEmojiExpanded ? "Show Less" : "Show More"}
       </button>

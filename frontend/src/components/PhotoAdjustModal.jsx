@@ -36,7 +36,6 @@ export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform
           <Stage width={template.width * 0.54} height={template.height * 0.54} scaleX={0.54} scaleY={0.54}>
             <Layer>
               <TemplateBackground template={template} designSettings={designSettings} />
-              <Decorations template={template} />
               <CircularPhoto
                 template={template}
                 image={image}

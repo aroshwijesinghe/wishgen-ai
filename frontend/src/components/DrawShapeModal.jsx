@@ -67,7 +67,7 @@ export default function DrawShapeModal({ isOpen, imageUrl, onSave, onCancel }) {
           </button>
         </div>
 
-        <div className="modal-stage-wrap" style={{ display: "flex", justifyContent: "center", background: "#f9fafb" }}>
+        <div className="modal-stage-wrap" style={{ display: "flex", justifyContent: "center", background: "var(--input-bg)" }}>
           <Stage
             width={imgWidth * scale}
             height={imgHeight * scale}
@@ -77,7 +77,7 @@ export default function DrawShapeModal({ isOpen, imageUrl, onSave, onCancel }) {
             onTouchStart={handleMouseDown}
             onTouchMove={handleMouseMove}
             onTouchEnd={handleMouseUp}
-            style={{ border: "1px dashed #ccc", cursor: "crosshair" }}
+            style={{ border: "1px dashed var(--panel-border)", cursor: "crosshair" }}
           >
             <Layer>
               {image && (
