@@ -1,4 +1,4 @@
-export default function ImageUpload({ imagePreview, portraitUrl, onImageChange }) {
+export default function ImageUpload({ imagePreview, onImageChange }) {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
     onImageChange(file);
@@ -10,11 +10,7 @@ export default function ImageUpload({ imagePreview, portraitUrl, onImageChange }
         Birthday photo
       </label>
       <label className="upload-box" htmlFor="birthday-image">
-        {imagePreview ? (
-          <img src={imagePreview} alt="Selected birthday portrait preview" />
-        ) : (
-          <span>Choose a JPG, PNG, or WebP image</span>
-        )}
+        {imagePreview ? <img src={imagePreview} alt="Selected birthday person preview" /> : <span>Choose a JPG, PNG, or WebP image</span>}
       </label>
       <input
         id="birthday-image"
@@ -23,13 +19,6 @@ export default function ImageUpload({ imagePreview, portraitUrl, onImageChange }
         accept="image/png,image/jpeg,image/webp"
         onChange={handleFileChange}
       />
-
-      {portraitUrl ? (
-        <div className="processed-preview">
-          <span>Processed portrait</span>
-          <img src={portraitUrl} alt="Background removed portrait preview" />
-        </div>
-      ) : null}
     </section>
   );
 }
