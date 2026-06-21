@@ -136,7 +136,7 @@ button {
 
 .designer-workspace {
   display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(420px, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(260px, 320px) minmax(500px, 1fr) minmax(260px, 300px);
   gap: 22px;
   max-width: 1680px;
   margin: 0 auto;
@@ -165,16 +165,6 @@ button {
   display: grid;
   gap: 20px;
   padding: 24px;
-}
-
-.preview-panel {
-  grid-template-rows: auto 1fr;
-  height: calc(100vh - 120px);
-}
-
-.properties-panel {
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
 }
 
 .title-block, .preview-heading {
@@ -514,6 +504,8 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  height: 100vh;
+  width: 100vw;
   transition: opacity 0.3s ease;
 }
 
@@ -535,7 +527,6 @@ input:focus, select:focus, textarea:focus {
 
 .splash-title {
   display: flex;
-  justify-content: center;
   color: #fff;
   font-size: 3rem;
   font-weight: 800;
@@ -659,9 +650,9 @@ input:focus, select:focus, textarea:focus {
   backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
-  z-index: 50;
+  z-index: 60;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   margin-top: 4px;
 }

@@ -81,11 +81,13 @@ export default function App() {
 
   const handleFitZoom = () => {
     if (!wrapRef.current) return;
-    const wrap = wrapRef.current;
+    const parent = wrapRef.current.parentElement;
     const { w, h } = getCardDimensions();
-    // Accounting for 100px padding on all sides (200px total) plus buffer
-    const scaleX = (wrap.clientWidth - 240) / w;
-    const scaleY = (wrap.clientHeight - 240) / h;
+    // Using parentElement dimensions (preview-panel) minus some buffer for the heading
+    const availableWidth = parent.clientWidth - 40; 
+    const availableHeight = parent.clientHeight - 80;
+    const scaleX = availableWidth / w;
+    const scaleY = availableHeight / h;
     setZoomScale(Math.min(scaleX, scaleY, 1.5));
   };
 
@@ -467,6 +469,10 @@ export default function App() {
           onSendBackward={sendBackward}
           onDeleteSelected={handleDeleteSelected}
           onOpenDrawModal={() => {
+            if (!imagePreview) {
+              setError("Please upload an image first to draw a shape over it.");
+              return;
+            }
             setIsDrawShapeModalOpen(true);
           }}
         />
