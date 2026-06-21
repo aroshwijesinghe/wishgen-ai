@@ -15,6 +15,7 @@ const shapes = [
   { id: "rounded_rect", label: "Rounded Rectangle" },
   { id: "star", label: "Star" },
   { id: "heart", label: "Heart" },
+  { id: "polygon", label: "Polygon" },
   { id: "cloud", label: "Cloud" },
   { id: "line", label: "Line" },
   { id: "custom", label: "Custom (Draw)" },
