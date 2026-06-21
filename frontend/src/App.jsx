@@ -184,6 +184,13 @@ export default function App() {
         short_title: result.short_title,
         signature_line: result.signature_line
       });
+      setDesignSettings((prev) => ({
+        ...prev,
+        titleText: undefined,
+        nameText: undefined,
+        wishText: undefined,
+        signatureText: undefined
+      }));
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -386,6 +393,13 @@ export default function App() {
           onBringForward={bringForward}
           onSendBackward={sendBackward}
           onDeleteSelected={handleDeleteSelected}
+          onOpenDrawModal={() => {
+            if (!imagePreview) {
+              setError("Please upload an image first to draw a shape over it.");
+              return;
+            }
+            setIsDrawShapeModalOpen(true);
+          }}
         />
       </section>
 

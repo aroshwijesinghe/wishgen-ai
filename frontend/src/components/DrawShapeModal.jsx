@@ -32,30 +32,27 @@ export default function DrawShapeModal({ isOpen, imageUrl, onSave, onCancel }) {
 
   const clear = () => setLines([]);
 
-  const save = () => {
-    if (lines.length === 0) return;
-    const allPoints = lines.reduce((acc, line) => acc.concat(line.points), []);
-    // Find bounding box
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (let i = 0; i < allPoints.length; i += 2) {
-      if (allPoints[i] < minX) minX = allPoints[i];
-      if (allPoints[i] > maxX) maxX = allPoints[i];
-      if (allPoints[i+1] < minY) minY = allPoints[i+1];
-      if (allPoints[i+1] > maxY) maxY = allPoints[i+1];
-    }
-    const cx = minX + (maxX - minX) / 2;
-    const cy = minY + (maxY - minY) / 2;
-
-    const normalizedPoints = allPoints.map((val, i) => i % 2 === 0 ? val - cx : val - cy);
-    onSave(normalizedPoints);
-  };
-
   const containerWidth = Math.min(window.innerWidth * 0.8, 600);
   const containerHeight = Math.min(window.innerHeight * 0.6, 600);
 
   const imgWidth = image?.width || 500;
   const imgHeight = image?.height || 500;
   const scale = Math.min(containerWidth / imgWidth, containerHeight / imgHeight);
+
+  const save = () => {
+    if (lines.length === 0) return;
+    const allPoints = lines.reduce((acc, line) => acc.concat(line.points), []);
+    
+    const mappedPoints = allPoints.map((val, i) => {
+      if (i % 2 === 0) {
+        return (val / scale) - (imgWidth / 2);
+      } else {
+        return (val / scale) - (imgHeight / 2);
+      }
+    });
+
+    onSave(mappedPoints);
+  };
 
   return (
     <div className="modal-backdrop">

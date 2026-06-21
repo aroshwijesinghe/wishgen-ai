@@ -182,16 +182,22 @@ function ColorBlobNode({ blob, isSelected, onSelect, onChange }) {
     };
 
     if (shapeType === "line") {
+      const lineLen = blob.length !== undefined ? blob.length : blob.radius * 2;
+      const lineThick = blob.thickness !== undefined ? blob.thickness : blob.radius / 4;
+      const safeThick = Math.max(1, lineThick);
+
       return (
-        <Line 
-          points={[-blob.radius, 0, blob.radius, 0]} 
-          stroke={blob.color} 
-          strokeWidth={blob.radius / 4} 
-          lineCap="round"
-          {...baseProps} 
-          shadowColor={blob.color}
-          shadowBlur={blob.radius}
-        />
+        <Group {...baseProps} ref={shapeRef}>
+          <Circle 
+            radius={safeThick / 2} 
+            scaleX={lineLen / safeThick} 
+            fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+            fillRadialGradientStartRadius={0}
+            fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+            fillRadialGradientEndRadius={safeThick / 2}
+            fillRadialGradientColorStops={[0, blob.color, 1, 'rgba(0,0,0,0)']}
+          />
+        </Group>
       );
     }
     
@@ -205,23 +211,23 @@ function ColorBlobNode({ blob, isSelected, onSelect, onChange }) {
     };
 
     if (shapeType === "square") {
-      return <Rect width={blob.radius * 2} height={blob.radius * 2} offsetX={blob.radius} offsetY={blob.radius} {...baseProps} {...fillProps} />;
+      return <Rect width={blob.radius * 2} height={blob.radius * 2} offsetX={blob.radius} offsetY={blob.radius} ref={shapeRef} {...baseProps} {...fillProps} />;
     } else if (shapeType === "rounded_rect") {
-      return <Rect width={blob.radius * 2} height={blob.radius * 2} offsetX={blob.radius} offsetY={blob.radius} cornerRadius={blob.radius / 4} {...baseProps} {...fillProps} />;
+      return <Rect width={blob.radius * 2} height={blob.radius * 2} offsetX={blob.radius} offsetY={blob.radius} cornerRadius={blob.radius / 4} ref={shapeRef} {...baseProps} {...fillProps} />;
     } else if (shapeType === "star") {
-      return <Star numPoints={5} innerRadius={blob.radius / 2} outerRadius={blob.radius} {...baseProps} {...fillProps} />;
+      return <Star numPoints={5} innerRadius={blob.radius / 2} outerRadius={blob.radius} ref={shapeRef} {...baseProps} {...fillProps} />;
     } else if (shapeType === "heart") {
       const s = blob.radius;
       const pathData = `M 0 ${-s * 0.3} C 0 ${-s * 0.8}, ${-s} ${-s * 0.8}, ${-s} ${-s * 0.3} C ${-s} ${s * 0.3}, 0 ${s * 0.7}, 0 ${s} C 0 ${s * 0.7}, ${s} ${s * 0.3}, ${s} ${-s * 0.3} C ${s} ${-s * 0.8}, 0 ${-s * 0.8}, 0 ${-s * 0.3} Z`;
-      return <Path data={pathData} {...baseProps} {...fillProps} />;
+      return <Path data={pathData} ref={shapeRef} {...baseProps} {...fillProps} />;
     } else if (shapeType === "cloud") {
       const r = blob.radius;
       const pathData = `M ${-r*0.5} 0 C ${-r*0.5} ${-r*0.5}, ${r*0.5} ${-r*0.5}, ${r*0.5} 0 C ${r} 0, ${r} ${r*0.5}, ${r*0.5} ${r*0.5} C ${r*0.5} ${r}, ${-r*0.5} ${r}, ${-r*0.5} ${r*0.5} C ${-r} ${r*0.5}, ${-r} 0, ${-r*0.5} 0 Z`;
-      return <Path data={pathData} {...baseProps} {...fillProps} />;
+      return <Path data={pathData} ref={shapeRef} {...baseProps} {...fillProps} />;
     }
     
     // Default circle
-    return <Circle radius={blob.radius} {...baseProps} {...fillProps} />;
+    return <Circle radius={blob.radius} ref={shapeRef} {...baseProps} {...fillProps} />;
   };
 
   return (
@@ -291,6 +297,7 @@ export function CircularPhoto({ template, image, transform, designSettings, drag
   const circleRadius = designSettings?.circleRadius || frame.radius;
   const shape = designSettings?.frameShape || "circle";
   const frameStyle = designSettings?.frameStyle || "classic";
+  const frameScale = designSettings?.frameScale !== undefined ? designSettings.frameScale : 1;
 
   const posX = position ? position.x : frame.x;
   const posY = position ? position.y : frame.y;
@@ -339,22 +346,27 @@ export function CircularPhoto({ template, image, transform, designSettings, drag
       ctx.bezierCurveTo(posX + r, posY, posX + r, posY + r*0.5, posX + r*0.5, posY + r*0.5);
       ctx.bezierCurveTo(posX + r*0.5, posY + r, posX - r*0.5, posY + r, posX - r*0.5, posY + r*0.5);
       ctx.bezierCurveTo(posX - r, posY + r*0.5, posX - r, posY, posX - r*0.5, posY);
-    } else if (shape === "custom" && customShapePath) {
-      // Smooth the custom shape using quadratic curves
-      if (customShapePath.length >= 4) {
-        ctx.moveTo(posX + customShapePath[0], posY + customShapePath[1]);
-        for (let i = 2; i < customShapePath.length - 2; i += 2) {
-          const xc = (posX + customShapePath[i] + posX + customShapePath[i + 2]) / 2;
-          const yc = (posY + customShapePath[i + 1] + posY + customShapePath[i + 3]) / 2;
-          ctx.quadraticCurveTo(posX + customShapePath[i], posY + customShapePath[i + 1], xc, yc);
-        }
-        ctx.quadraticCurveTo(
-          posX + customShapePath[customShapePath.length - 2],
-          posY + customShapePath[customShapePath.length - 1],
-          posX + customShapePath[0],
-          posY + customShapePath[1]
-        );
+    } else if (shape === "custom" && customShapePath && customShapePath.length >= 4) {
+      // Smooth the custom shape using quadratic curves, scaling with image transform
+      const s = transform?.scale || 1;
+      const tx = transform?.x || 0;
+      const ty = transform?.y || 0;
+
+      const getX = (i) => posX + customShapePath[i] * s + tx;
+      const getY = (i) => posY + customShapePath[i + 1] * s + ty;
+
+      ctx.moveTo(getX(0), getY(0));
+      for (let i = 2; i < customShapePath.length - 2; i += 2) {
+        const xc = (getX(i) + getX(i + 2)) / 2;
+        const yc = (getY(i) + getY(i + 2)) / 2;
+        ctx.quadraticCurveTo(getX(i), getY(i), xc, yc);
       }
+      ctx.quadraticCurveTo(
+        getX(customShapePath.length - 2),
+        getY(customShapePath.length - 2),
+        getX(0),
+        getY(0)
+      );
     } else {
       ctx.arc(posX, posY, circleRadius, 0, Math.PI * 2, false);
     }
@@ -396,13 +408,28 @@ export function CircularPhoto({ template, image, transform, designSettings, drag
       const pathData = `M ${posX - r*0.5} ${posY} C ${posX - r*0.5} ${posY - r*0.5}, ${posX + r*0.5} ${posY - r*0.5}, ${posX + r*0.5} ${posY} C ${posX + r} ${posY}, ${posX + r} ${posY + r*0.5}, ${posX + r*0.5} ${posY + r*0.5} C ${posX + r*0.5} ${posY + r}, ${posX - r*0.5} ${posY + r}, ${posX - r*0.5} ${posY + r*0.5} C ${posX - r} ${posY + r*0.5}, ${posX - r} ${posY}, ${posX - r*0.5} ${posY} Z`;
       return <Path data={pathData} {...customProps} />;
     } else if (shape === "custom" && customShapePath && customShapePath.length >= 4) {
-      let svgPath = `M ${posX + customShapePath[0]} ${posY + customShapePath[1]} `;
+      const s = transform?.scale || 1;
+      const tx = transform?.x || 0;
+      const ty = transform?.y || 0;
+
+      const getX = (i) => posX + customShapePath[i] * s + tx;
+      const getY = (i) => posY + customShapePath[i + 1] * s + ty;
+
+      let svgPath = `M ${getX(0)} ${getY(0)} `;
       for (let i = 2; i < customShapePath.length - 2; i += 2) {
-        const xc = (posX + customShapePath[i] + posX + customShapePath[i + 2]) / 2;
-        const yc = (posY + customShapePath[i + 1] + posY + customShapePath[i + 3]) / 2;
-        svgPath += `Q ${posX + customShapePath[i]} ${posY + customShapePath[i + 1]}, ${xc} ${yc} `;
+        const x1 = getX(i);
+        const y1 = getY(i);
+        const x2 = getX(i + 2);
+        const y2 = getY(i + 2);
+        const xc = (x1 + x2) / 2;
+        const yc = (y1 + y2) / 2;
+        svgPath += `Q ${x1} ${y1}, ${xc} ${yc} `;
       }
-      svgPath += `Q ${posX + customShapePath[customShapePath.length - 2]} ${posY + customShapePath[customShapePath.length - 1]}, ${posX + customShapePath[0]} ${posY + customShapePath[1]} Z`;
+      const lastX = getX(customShapePath.length - 2);
+      const lastY = getY(customShapePath.length - 2);
+      const firstX = getX(0);
+      const firstY = getY(0);
+      svgPath += `Q ${lastX} ${lastY}, ${firstX} ${firstY} Z`;
       return <Path data={svgPath} {...customProps} lineJoin="round" lineCap="round" />;
     } else {
       return <Circle x={posX} y={posY} radius={r} {...customProps} />;
@@ -444,11 +471,15 @@ export function CircularPhoto({ template, image, transform, designSettings, drag
       onTap={onSelect}
       onDragEnd={(e) => {
         if (isOuterDraggable) {
-          onDragEnd({ x: posX + e.target.x(), y: posY + e.target.y() });
-          e.target.x(0);
-          e.target.y(0);
+          onDragEnd({ x: e.target.x(), y: e.target.y() });
         }
       }}
+      x={posX}
+      y={posY}
+      offsetX={posX}
+      offsetY={posY}
+      scaleX={frameScale}
+      scaleY={frameScale}
     >
       {isSelected && (
         <Rect 
@@ -545,7 +576,7 @@ function TemplateText({ template, wishData, formData, designSettings, elementPos
     <>
       <Text 
         ref={titleRef}
-        text={wishData?.short_title || "Happy Birthday"} 
+        text={designSettings?.titleText !== undefined ? designSettings.titleText : (wishData?.short_title || "Happy Birthday")} 
         x={positions.title?.x || 0} 
         y={positions.title?.y || 100} 
         width={template.width}
@@ -565,7 +596,7 @@ function TemplateText({ template, wishData, formData, designSettings, elementPos
       />
       <Text 
         ref={nameRef}
-        text={formData.name ? `${formData.name.trim()}!` : "Your Name!"} 
+        text={designSettings?.nameText !== undefined ? designSettings.nameText : (formData.name ? `${formData.name.trim()}!` : "Your Name!")} 
         x={positions.name?.x || 0} 
         y={positions.name?.y || 150} 
         width={template.width}
@@ -584,7 +615,7 @@ function TemplateText({ template, wishData, formData, designSettings, elementPos
       />
       <Text 
         ref={wishRef}
-        text={wishData?.wish || "Generate a personalized birthday wish to preview it here."} 
+        text={designSettings?.wishText !== undefined ? designSettings.wishText : (wishData?.wish || "Generate a personalized birthday wish to preview it here.")} 
         x={positions.wish?.x || template.width * 0.1} 
         y={positions.wish?.y || 650} 
         width={template.width * 0.8}
@@ -602,10 +633,10 @@ function TemplateText({ template, wishData, formData, designSettings, elementPos
         onClick={() => onSelectId?.("wish")}
         onTap={() => onSelectId?.("wish")}
       />
-      {wishData?.signature_line ? (
+      {wishData?.signature_line || designSettings?.signatureText !== undefined ? (
         <Text 
           ref={signatureRef}
-          text={wishData.signature_line} 
+          text={designSettings?.signatureText !== undefined ? designSettings.signatureText : wishData.signature_line} 
           x={positions.signature?.x || template.width * 0.1} 
           y={positions.signature?.y || 800} 
           width={template.width * 0.8}

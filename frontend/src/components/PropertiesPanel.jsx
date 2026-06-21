@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 const fonts = [
   "Playfair Display", "Lora", "Merriweather", // Serif
@@ -52,7 +52,9 @@ export default function PropertiesPanel({
   onBringForward,
   onSendBackward,
   onDeleteSelected,
+  onOpenDrawModal,
 }) {
+  const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
   const isTextNode = ["title", "name", "wish", "signature"].includes(selectedId);
   const isColorBlob = selectedId && selectedId.startsWith("color-");
   const isEmoji = selectedId && selectedId.startsWith("emoji-");
@@ -156,17 +158,45 @@ export default function PropertiesPanel({
         {isTextNode && (
           <>
             <label className="field full-width">
+              <span>Text Content</span>
+              <textarea
+                rows={selectedId === "wish" ? 4 : 2}
+                value={designSettings[`${selectedId}Text`] !== undefined ? designSettings[`${selectedId}Text`] : ""}
+                placeholder="Type here to override the generated text..."
+                onChange={(e) => onChangeDesign(`${selectedId}Text`, e.target.value)}
+                style={{ resize: "vertical", width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db" }}
+              />
+            </label>
+            <label className="field full-width">
               <span>Font Family</span>
-              <select
-                value={designSettings[`${selectedId}FontFamily`] || "Arial"}
-                onChange={(e) => onChangeDesign(`${selectedId}FontFamily`, e.target.value)}
-              >
-                {fonts.map((font) => (
-                  <option key={font} value={font} style={{ fontFamily: font }}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+              <div style={{ position: "relative" }}>
+                <div 
+                  onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
+                  style={{ padding: "8px", border: "1px solid #d1d5db", borderRadius: "4px", cursor: "pointer", background: "#fff", display: "flex", justifyContent: "space-between" }}
+                >
+                  <span style={{ fontFamily: designSettings[`${selectedId}FontFamily`] || "Arial" }}>
+                    {designSettings[`${selectedId}FontFamily`] || "Arial"}
+                  </span>
+                  <span>▼</span>
+                </div>
+                {isFontDropdownOpen && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: "4px", maxHeight: "250px", overflowY: "auto", zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+                    {fonts.map((font) => (
+                      <div 
+                        key={font} 
+                        style={{ padding: "10px", fontFamily: font, cursor: "pointer", borderBottom: "1px solid #f3f4f6", fontSize: "16px" }}
+                        onMouseEnter={() => onChangeDesign(`${selectedId}FontFamily`, font)}
+                        onClick={() => {
+                          onChangeDesign(`${selectedId}FontFamily`, font);
+                          setIsFontDropdownOpen(false);
+                        }}
+                      >
+                        {font}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </label>
             <label className="field">
               <span>Font Size</span>
@@ -333,6 +363,27 @@ export default function PropertiesPanel({
                   </option>
                 ))}
               </select>
+            </label>
+            
+            {designSettings.frameShape === "custom" && (
+              <button 
+                type="button" 
+                className="secondary-button" 
+                onClick={onOpenDrawModal} 
+                style={{ width: "100%", marginBottom: "14px" }}
+              >
+                ✏️ Draw Custom Shape
+              </button>
+            )}
+
+            <label className="field full-width">
+              <span>Frame Scale</span>
+              <input
+                type="range" min="0.2" max="3" step="0.05"
+                value={designSettings.frameScale !== undefined ? designSettings.frameScale : 1}
+                onChange={(e) => onChangeDesign("frameScale", Number(e.target.value))}
+              />
+              <small>{Math.round((designSettings.frameScale !== undefined ? designSettings.frameScale : 1) * 100)}%</small>
             </label>
             
             <label className="field full-width">
