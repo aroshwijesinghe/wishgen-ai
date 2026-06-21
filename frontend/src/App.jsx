@@ -64,8 +64,10 @@ export default function App() {
   
   const [zoomScale, setZoomScale] = useState(0.5); // Default start scale
   const wrapRef = useRef(null);
+  const previewPanelRef = useRef(null);
   const [isPanMode, setIsPanMode] = useState(false);
   const [isDraggingWrap, setIsDraggingWrap] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const [showSplash, setShowSplash] = useState(true);
 
@@ -81,13 +83,46 @@ export default function App() {
 
   const handleFitZoom = () => {
     if (!wrapRef.current) return;
-    const wrap = wrapRef.current;
+    const parent = wrapRef.current.parentElement;
     const { w, h } = getCardDimensions();
-    // Accounting for 100px padding on all sides (200px total) plus buffer
-    const scaleX = (wrap.clientWidth - 240) / w;
-    const scaleY = (wrap.clientHeight - 240) / h;
+    // Subtract 200px for padding (100px each side) + 40px buffer
+    const availableWidth = parent.clientWidth - 240; 
+    const availableHeight = parent.clientHeight - 280;
+    const scaleX = availableWidth / w;
+    const scaleY = availableHeight / h;
     setZoomScale(Math.min(scaleX, scaleY, 1.5));
+    
+    // Reset scroll positions to center
+    setTimeout(() => {
+      if (wrapRef.current) {
+        wrapRef.current.scrollTop = 0;
+        wrapRef.current.scrollLeft = 0;
+      }
+    }, 10);
   };
+
+  const handleToggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (previewPanelRef.current) {
+          await previewPanelRef.current.requestFullscreen();
+        }
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      setTimeout(handleFitZoom, 100); // Refit after a small delay to allow reflow
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   const { w: cardW, h: cardH } = getCardDimensions();
   const dynTemplate = { ...template, width: cardW, height: cardH };
@@ -375,8 +410,8 @@ export default function App() {
           <DownloadOptions stageRef={stageRef} name={formData.name} disabled={!canDownload} />
         </aside>
 
-        <section className="preview-panel">
-          <div className="preview-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <section className="preview-panel" ref={previewPanelRef}>
+          <div className="preview-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: isFullscreen ? "20px" : "0" }}>
             <div>
               <p className="eyebrow">Final Preview</p>
               <small>Drag any text or the photo frame to reposition it.</small>
@@ -387,6 +422,9 @@ export default function App() {
               <button className="secondary-button" onClick={() => setZoomScale(z => Math.min(3, z + 0.1))}>Zoom In</button>
               <button className={`secondary-button ${isPanMode ? 'active' : ''}`} onClick={() => setIsPanMode(!isPanMode)} style={{ background: isPanMode ? '#3b82f6' : '', color: isPanMode ? '#fff' : '' }}>
                 {isPanMode ? 'Stop Panning' : 'Pan Mode'}
+              </button>
+              <button className="secondary-button" onClick={handleToggleFullscreen}>
+                {isFullscreen ? "Exit Full Screen" : "Full Screen"}
               </button>
             </div>
           </div>
@@ -467,6 +505,10 @@ export default function App() {
           onSendBackward={sendBackward}
           onDeleteSelected={handleDeleteSelected}
           onOpenDrawModal={() => {
+            if (!imagePreview) {
+              setError("Please upload an image first to draw a shape over it.");
+              return;
+            }
             setIsDrawShapeModalOpen(true);
           }}
         />

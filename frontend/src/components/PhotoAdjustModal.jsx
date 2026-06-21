@@ -19,23 +19,28 @@ export default function PhotoAdjustModal({ isOpen, template, imageUrl, transform
 
   const reset = () => onChange({ x: 0, y: 0, scale: 1 });
 
+  const maxStageWidth = Math.min(window.innerWidth * 0.8, 800) - 64; // Modal padding buffer
+  const maxStageHeight = Math.min(window.innerHeight * 0.7, 800) - 150; // Controls buffer
+  const scale = Math.min(maxStageWidth / template.width, maxStageHeight / template.height);
+
   return (
     <div className="modal-backdrop">
-      <section className="photo-modal">
+      <section className="photo-modal" style={{ maxWidth: "90vw", width: "fit-content" }}>
         <div className="modal-header">
           <div>
             <p className="eyebrow">Photo Position</p>
-            <h2>Fit photo inside the circle</h2>
+            <h2>Fit photo inside the shape</h2>
           </div>
           <button type="button" className="secondary-button" onClick={onCancel}>
             Cancel
           </button>
         </div>
 
-        <div className="modal-stage-wrap">
-          <Stage width={template.width * 0.54} height={template.height * 0.54} scaleX={0.54} scaleY={0.54}>
+        <div className="modal-stage-wrap" style={{ display: "flex", justifyContent: "center", overflow: "hidden" }}>
+          <Stage width={template.width * scale} height={template.height * scale} scaleX={scale} scaleY={scale}>
             <Layer>
               <TemplateBackground template={template} designSettings={designSettings} />
+
               <CircularPhoto
                 template={template}
                 image={image}

@@ -72,8 +72,8 @@ export default function DrawShapeModal({ isOpen, imageUrl, onSave, onCancel }) {
             width={imgWidth * scale}
             height={imgHeight * scale}
             onMouseDown={handleMouseDown}
-            onMousemove={handleMouseMove}
-            onMouseup={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
             onTouchStart={handleMouseDown}
             onTouchMove={handleMouseMove}
             onTouchEnd={handleMouseUp}
